@@ -1,3 +1,5 @@
+
+
 const https = require("https");
 
 const teamID = '4523';
@@ -5,14 +7,43 @@ const teamsURL = "https://api.overwatchleague.com/teams/";
 
 const url = teamsURL+teamID
 
-//console.log(url);
-
 let responseStr = "The next Fuel game will be ";
 
 getOWL(url, nextMatch);
 
-
 //********************************************************
+
+// intent functions
+function nextMatch(response) {
+	if (response == '') {
+		// something went wrong, OWL API returned nothing
+		console.log("Error, response was empty.");
+	} else {
+		// get the schedule containing an array of matches
+		let schedule = response["schedule"];
+		let stTimes = [];
+		for (var i in schedule) {
+			// get the match and process start times
+			const match = schedule[i];
+			const st = match['startDate'];
+			const stDate = getCalendarMatchDate(st);
+			stTimes.push(st);
+		}
+
+		// get the next match by filtering through the match
+		// start time list and get the next match in the future
+		const now = Date.now();
+		stTimes = stTimes.sort();
+		while(stTimes[0] < now) {
+			stTimes.shift()
+		}
+
+		stNextMatch = stTimes[0];
+		calNextMatch = getCalendarMatchDate(stNextMatch);
+		console.log(responseStr + calNextMatch);
+		console.log();
+	}
+}
 
 // connect to overwatch api
 function getOWL(url, callback) {
@@ -28,49 +59,6 @@ function getOWL(url, callback) {
 		});
 	});
 }
-
-// intent functions
-
-function nextMatch(response) {
-	if (response == '') {
-		console.log("Error, response was empty.");
-	} else {
-		// get the schedule
-		let schedule = response["schedule"];
-		let stTimes = [];
-		for (var i in schedule) {
-			// get the match and process information
-			//console.log(schedule[i]);
-			const match = schedule[i];
-			const matchid = match['id'];
-			const st = match['startDate'];
-			const et = match['endDate'];
-			const stDate = getCalendarMatchDate(st);
-			const etDate = getCalendarMatchDate(et);
-			stTimes.push(st);
-		}
-		const now = Date.now();
-		//sort stTimes to compare to todays date.
-		stTimes = stTimes.sort();
-
-		const len = stTimes.length;
-		let iter = 0;
-		let j = 0;
-		while (iter < len) {
-			if (stTimes[iter] < now) {
-				j=j+1
-			}
-			iter = iter+1
-		}
-		stTimes = stTimes.slice(9);
-
-		stNextMatch = stTimes[0];
-		calNextMatch = getCalendarMatchDate(stNextMatch);
-		console.log(responseStr + calNextMatch);
-		console.log();
-	}
-}
-
 
 // *************************************************
 
