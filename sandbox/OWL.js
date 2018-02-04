@@ -7,14 +7,14 @@ const teamsURL = "https://api.overwatchleague.com/teams/";
 
 const url = teamsURL+teamID
 
-let responseStr = "The next Fuel game will be ";
+let str = "The next Fuel game will be ";
 
-getOWL(url, nextMatch);
+getOWL(url, nextMatch, str);
 
 //********************************************************
 
 // intent functions
-function nextMatch(response) {
+function nextMatch(response, str) {
 	if (response == '') {
 		// something went wrong, OWL API returned nothing
 		console.log("Error, response was empty.");
@@ -40,13 +40,13 @@ function nextMatch(response) {
 
 		stNextMatch = stTimes[0];
 		calNextMatch = getCalendarMatchDate(stNextMatch);
-		console.log(responseStr + calNextMatch);
+		console.log(str + calNextMatch);
 		console.log();
 	}
 }
 
 // connect to overwatch api
-function getOWL(url, callback) {
+function getOWL(url, callback, str) {
 	https.get(url, res => {
 		res.setEncoding("utf8");
 		let body = "";
@@ -55,7 +55,7 @@ function getOWL(url, callback) {
 		});
 		res.on("end", () => {
 			body = JSON.parse(body);
-			return callback(body);
+			return callback(body, str);
 		});
 	});
 }
