@@ -1,2 +1,8 @@
 
+# ignore file
 node_modules/
+dump/
+
+main.js
+*.json
+.DS_Store
