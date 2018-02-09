@@ -1,66 +1,92 @@
+'use strict';
 
-
+// import packages
 const https = require("https");
 
+// set up environment
 const teamID = '4523';
 const teamsURL = "https://api.overwatchleague.com/teams/";
+const url = teamsURL+teamID;
 
-const url = teamsURL+teamID
+// test functionality
+getOWL(url, nextMatch);
 
-let str = "The next Fuel game will be ";
 
-getOWL(url, nextMatch, str);
 
-//********************************************************
 
-// intent functions
-function nextMatch(response, str) {
+
+
+
+////////////////////////////////////////////////
+// Intent functions
+////////////////////////////////////////////////
+function nextMatch(response) {
 	if (response == '') {
 		// something went wrong, OWL API returned nothing
 		console.log("Error, response was empty.");
 	} else {
-		// get the schedule containing an array of matches
-		let schedule = response["schedule"];
-		let stTimes = [];
-		for (var i in schedule) {
-			// get the match and process start times
-			const match = schedule[i];
-			const st = match['startDate'];
-			const stDate = getCalendarMatchDate(st);
-			stTimes.push(st);
+		// try to sort the dictionary
+		let teamId = response.id;
+
+		// get the matches as an array from the schedule entry
+		let matches = response.schedule;
+
+		//sort the matches
+		matches = matches.sort(compareTimes);
+
+		//compare for next start time
+		let now = Date.now()
+		while(matches[0].startDate < now) {
+			matches.shift();
 		}
 
-		// get the next match by filtering through the match
-		// start time list and get the next match in the future
-		const now = Date.now();
-		stTimes = stTimes.sort();
-		while(stTimes[0] < now) {
-			stTimes.shift()
+		// configure the output
+		const nextMatch = matches[0];
+		const competitors = nextMatch.competitors;
+		let home = {};
+		let away = {};
+		for (var j in competitors) {
+			if (competitors[j].id == teamId) {
+				home = competitors[j];
+			} else {
+				away = competitors[j];
+			}
 		}
 
-		stNextMatch = stTimes[0];
-		calNextMatch = getCalendarMatchDate(stNextMatch);
-		console.log(str + calNextMatch);
-		console.log();
+		// alexa takes over from here
+		const calTime = getCalendarMatchDate(nextMatch.startDate);
+		console.log(`The ${home.name} will face the ${away.name} on ${calTime}!`);
 	}
 }
 
 // connect to overwatch api
-function getOWL(url, callback, str) {
+function getOWL(url, callback) {
 	https.get(url, res => {
 		res.setEncoding("utf8");
+		// good practice would be to check status code
 		let body = "";
 		res.on("data", data => {
 			body += data;
 		});
 		res.on("end", () => {
 			body = JSON.parse(body);
-			return callback(body, str);
+			return callback(body);
 		});
 	});
 }
 
-// *************************************************
+////////////////////////////////////////////////
+// Helpers
+////////////////////////////////////////////////
+function compareTimes(a,b) {
+	if (a.startDate < b.startDate) {
+		return -1;
+	}
+	if (a.startDate > b.startDate) {
+		return 1;
+	}
+	return 0;
+}
 
 // helper functions
 function getCalendarMatchDate(secondsSinceEpoch) {
