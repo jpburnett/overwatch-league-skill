@@ -4,11 +4,11 @@ const Alexa = require('alexa-sdk');
 const https = require("https");
 
 const languageStrings = require('./languageStrings').languageStrings;
-const teamIDs = require('./teamID').ids;
+
 const OWL_URL = "https://api.overwatchleague.com/";
 
-const APP_ID = "";
-const GOOGAPI = "";
+const APP_ID = "amzn1.ask.skill.3efe9a5c-f690-4bd2-b573-a57607b7e109";
+const GOOGAPI = "AIzaSyDxKQfECCXrH4YGUVMHFY4OuV7iYSiYYKo";
 
 ////////////////////////////////////////////////
 // console.log(new Date().getTimezoneOffset());
@@ -19,7 +19,7 @@ const handlers = {
 		this.emit(':tell', speechOutput);
 	},
 	'GetNextMatchIntent' : function() {
-
+		// need to propagate alexa through the asynch chain, cast as 'self'.
 		var self = this;
 
 		// first we need to resolve the timezone
@@ -73,70 +73,163 @@ exports.handler = function(event, context) {
 function getNextMatch(rawOffset, self) {
 	// 	now we can finally go get a team.	
 	const teamSlot = self.event.request.intent.slots.Team;
-
+	let resolutions = {};
 	let team;
-	if (teamSlot && teamSlot.value) {
-		team = teamSlot.value.toLowerCase();
+	let id;
+
+	if (teamSlot && teamSlot.resolutions) {
+		 //TODO: check if length greater than one. We could be introuble
+		resolutions = teamSlot.resolutions.resolutionsPerAuthority[0];
+	
+		if(resolutions.status.code == "ER_SUCCESS_MATCH") {
+			const resolutionValues = resolutions.values[0];
+			team = resolutionValues.value.name;
+			id = resolutionValues.value.id;
+		} else {
+			// ow error no match. TODO: Look into if this error needs to be differnet and more helpful to the user.
+			self.response.speak(self.t('INVALID_TEAM_MSG', teamSlot.value)).listen(self.t('TEAM_REPROMPT'));
+			self.response.cardRenderer("error", resolutions.status.code);
+			self.emit(':responseReady');
+		}
+
 	} else {
-		console.log('No team seemed to be specified...');
-		self.emit(':tell', self.t('SHUTDOWN_MSG'));
-	}
-
-	// get team id
-	const id = teamIDs[team];
-
-	if (id) {
-	// prepare the url
-	const url = OWL_URL + 'teams/' + id
-
-	// need to propagate alexa through the asynch chain, cast as 'self'.
-	//var self = this;
-	getOWL(url, nextMatch, team, rawOffset, self);
-
-	} else {
+		//ow user spoke nothing with a synonym. TODO: Look into if this error needs to be differnet and more helpful to the user.
 		self.response.speak(self.t('INVALID_TEAM_MSG', team)).listen(self.t('TEAM_REPROMPT'));
 		self.emit(':responseReady');
 	}
+
+	// if (teamSlot && teamSlot.value) {
+	// 	team = teamSlot.value.toLowerCase();
+	// } else {
+	// 	console.log('No team seemed to be specified...');
+	// 	self.emit(':tell', self.t('SHUTDOWN_MSG'));
+	// }
+
+	// // get team id
+	// const id = teamIDs[team];
+
+	// prepare the url
+	const url = OWL_URL + 'teams/' + id
+
+	getOWL(url, nextMatch, team, rawOffset, self);
+
+	// } else {
+	// 	self.response.speak(self.t('INVALID_TEAM_MSG', team)).listen(self.t('TEAM_REPROMPT'));
+	// 	self.emit(':responseReady');
+	// }
 }
 
 function nextMatch(response, team, rawOffset, self) {
 	if (response == '') {
-		// something went wrong, OWL API returned nothing
+		// something went wrong, OWL API returned nothing. TODO: improve this if necessary
 		console.log("Error, response was empty.");
 		self.response.speak(self.t('API_ERROR_MSG'));
 		self.emit(':responseReady');
 	} else {
-		// get the schedule containing an array of matches
-		let schedule = response["schedule"];
-		let stTimes = [];
-		for (var i in schedule) {
-			// get the match and process start times
-			const match = schedule[i];
-			const st = match['startDate'];
-			const stDate = getCalendarMatchDate(st);
-			stTimes.push(st);
+		// try to sort the dictionary
+		let teamId = response.id;
+
+		// get the matches as an array from the schedule entry
+		let matches = response.schedule;
+
+		//sort the matches
+		matches = matches.sort(compareTimes);
+
+		//compare for next start time
+		let now = Date.now()
+		let liveMatch = {}; //techincally, they could be playing right now.
+		while(matches[0].startDate < now) {
+			if (matches[0].endDate > now) {
+				// will record that a live match for the team is happening, but will also get next match.
+				liveMatch = matches[0];
+			}
+			matches.shift();
 		}
 
-		// get the next match by filtering through the match
-		// start time list and get the next match in the future
-		const now = Date.now();
-		stTimes = stTimes.sort();
-		while(stTimes[0] < now) {
-			stTimes.shift()
+		// if their is a live match get that information
+		let isWinning = 0;
+		let isTied = 0;
+		let scores = []; //array of two {} i.e. scores[i].value
+		let matchStatus = "";
+		let introStatus = "";
+		let matchCompetitor = {};
+		if (liveMatch.id) {
+			scores = liveMatch.scores;
+
+			// if tied we can just zoom on through
+			if (scores[0].value === scores[1].value) {
+				isTied = 1;
+			} else {
+				//else we need to find out who's who
+				const team1 = liveMatch.competitors[0];
+				const team2 = liveMatch.competitors[1];
+
+
+				const isTeam1 = (team1.id === teamId? 1: 0);
+				isWinning = 0;
+				if (isTeam1) {
+					if (scores[0].value > scores[1].value) {
+						isWinning = 1;
+					}
+					matchCompetitor = team2;
+				} else {
+					if (scores[1].value > scores[0].value) {
+						isWinning = 1;
+					}
+					matchCompetitor = team1;
+					// flip the score around, might be a better way to do this.
+					const tmp = scores[0];
+					scores[0] = scores[1];
+					scores[1] = tmp;
+				}
+			}
+
+			if (isTied) {
+				introStatus = getRandomEntry(introTied);
+				matchStatus = getRandomEntry(statusTied);
+			} else {
+				if (isWinning) {
+					introStatus = getRandomEntry(introWinning);
+					matchStatus = getRandomEntry(statusWinning);
+				} else {
+					introStatus = getRandomEntry(introLosing);
+					matchStatus = getRandomEntry(statusLosing);
+				}
+			}
 		}
 
-		let stNextMatch = "";
-		if (rawOffset) {
-			stNextMatch = stTimes[0] + rawOffset*1000;	
-		} else {
-			stNextMatch = stTimes[0];
+		// get information about the next match
+		const nextMatch = matches[0];
+		let home = {}; // team of interest
+		let away = {};
+		const competitors = nextMatch.competitors;
+		for (var j in competitors) {
+			if (competitors[j].id == teamId) {
+				home = competitors[j];
+			} else {
+				away = competitors[j];
+			}
 		}
-		const calNextMatch = getCalendarMatchDate(stNextMatch);
+		const calTime = getCalendarMatchDate(nextMatch.startDate, rawOffset*1000);
 
-		// return back to alexa
-		let speechOutput = "The next " + team + " game will be " + calNextMatch;
-		console.log(speechOutput);
-		console.log();
+		// configure the output and return to alexa
+		let liveMatchContent = "";
+		if (liveMatch.id) {
+			liveMatchContent = `A game for the ${home.name} is happening right now!\n\n${introStatus}. The ${home.name} are ${matchStatus} the ${matchCompetitor.name}. The score is ${scores[0].value} to ${scores[1].value}.\n\nIn their next game, `;
+		}
+
+		const vsPhrase = getRandomEntry(vs);
+		let nextMatchContent = `The ${home.name} will ${vsPhrase} the ${away.name} on ${calTime.month} ${calTime.day} at ${calTime.clkStr}.`
+		// prepare card
+		const cardTitle = "Match Details";
+		const cardContent = `${liveMatchContent}${nextMatchContent}\n\nTheir record is ${response.ranking.matchWin}-${response.ranking.matchLoss}.`;
+		const cardImg = {
+			smallImageUrl: home.logo,
+			largeImageUrl: home.logo
+		};
+		self.response.cardRenderer(cardTitle, cardContent, cardImg);
+		// prepare speech
+		let speechOutput = `${liveMatchContent}${nextMatchContent}`;
 
 		self.response.speak(speechOutput);
 		self.emit(':responseReady');
@@ -201,8 +294,7 @@ function getPostalCode(response, self) {
 		// need to generate a better error response
 		self.emit(':tell', "Error making request.");
 	}
-	console.log(countryCode);
-	console.log(postalCode);
+
 	const latLonOptions = {
 		host: 'maps.googleapis.com',
 		path: `/maps/api/geocode/json?address=${countryCode},${postalCode}&key=${GOOGAPI}`,
@@ -214,32 +306,24 @@ function getPostalCode(response, self) {
 }
 
 function getLatLon(response, self) {
-	console.log(response)
 	const city = response.results[0].address_components[1].short_name;
 	const state = response.results[0].address_components[3].short_name;
 	const lat = response.results[0].geometry.location.lat;
 	const lon = response.results[0].geometry.location.lng;
 	const timestamp = Math.floor(Date.now()/1000);
-	console.log(city);
-	console.log(state);
-	console.log(lat);
-	console.log(lon);
 
 	const gmapstzOptions = {
 		host: 'maps.googleapis.com',
 		path: `/maps/api/timezone/json?location=${lat},${lon}&timestamp=${timestamp}&key=${GOOGAPI}`,
 		method: 'GET'
 	};
-	console.log(gmapstzOptions.path);
+
 	apiCall(gmapstzOptions, getTimezone, googleErr, self);
 }
 
 function getTimezone(response, self) {
-	console.log(response);	
 	const timezone = response.timeZoneId;
 	const rawOffset = response.rawOffset;
-	console.log(timezone);
-	console.log(`secs: ${rawOffset}`);
 
 	getNextMatch(rawOffset, self);
 }
@@ -250,8 +334,24 @@ function googleErr(self) {
 
 ////////////////////////////////////////////////
 // Helper functions
-function getCalendarMatchDate(secondsSinceEpoch) {
-	const months = ['Jan.','Feb.','Mar.','Apr.','May.','Jun.','Jul.','Aug.','Sep.','Oct.','Nov.','Dec.'];
+////////////////////////////////////////////////
+function compareTimes(a,b) {
+	if (a.startDate < b.startDate) {
+		return -1;
+	}
+	if (a.startDate > b.startDate) {
+		return 1;
+	}
+	return 0;
+}
+
+function getCalendarMatchDate(secondsSinceEpoch, rawOffset) {
+
+	if (rawOffset) {
+		secondsSinceEpoch = secondsSinceEpoch + rawOffset;
+	}
+
+	const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 	let date = new Date(secondsSinceEpoch);
 
 	const y = date.getFullYear();
@@ -259,7 +359,81 @@ function getCalendarMatchDate(secondsSinceEpoch) {
 	const d = date.getDate();
 	const clkStr = date.toLocaleTimeString('en-US')
 
-	const dateStr = m + " " + d + " " + y +" " + clkStr;
-
-	return dateStr;
+	let dateObj = {
+		year: y,
+		month: m,
+		day: d,
+		clkStr: clkStr
+	};
+	//const dateStr = m + " " + d + " " + y +" " + clkStr;
+	//return dateStr;
+	return dateObj;
 }
+
+function getRandomEntry(list) {
+	const idx = Math.floor(Math.random()*list.length);
+	return list[idx];
+}	
+
+// TODO: should we think about converting these to language string?
+const vs = [
+	"face",
+	"showdown with",
+	"compete with",
+	"play against",
+	"compete against",
+	"contend with",
+	"rival",
+	"go head to head with",
+	"challenge",
+	"take on",
+	"battle",
+	"throw down with",
+	"clash with"
+];
+
+const introTied = [
+	"It's a close one",
+	"This could be a close one. The game is tied",
+	"Things might come down to a coin flip",
+	"Chances are good"
+];
+
+const introWinning = [
+	"This has been a piece of cake",
+	"So far so good",
+	"There is a good chance of victory",
+	"It has been a good match",
+	"Prepare the confetti",
+];
+
+const introLosing = [
+	"Oh no, lets hope for a comeback",
+	"Things are not looking to good",
+	"This game is on the rocks",
+	"We may need a miracle"
+];
+
+const statusWinning = [
+	"winning against",
+	"beating",
+	"so far triumphant over",
+	"laying the smack down on",
+	"taking advantage over",
+];
+
+const statusLosing = [
+	"losing against",
+	"struggling against",
+	"getting beating from",
+	"trying to survive against",
+	"crushing beneath",
+];
+
+const statusTied = [
+	"fighting hard against",
+	"currently tied against",
+	"looking to overcome",
+	"tied with",
+	"neck to neck with"
+];
