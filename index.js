@@ -7,8 +7,8 @@ const languageStrings = require('./languageStrings').languageStrings;
 
 const OWL_URL = "https://api.overwatchleague.com/";
 
-const APP_ID = "amzn1.ask.skill.3efe9a5c-f690-4bd2-b573-a57607b7e109";
-const GOOGAPI = "AIzaSyDxKQfECCXrH4YGUVMHFY4OuV7iYSiYYKo";
+const APP_ID = "";
+const GOOGAPI = "";
 
 ////////////////////////////////////////////////
 // console.log(new Date().getTimezoneOffset());
