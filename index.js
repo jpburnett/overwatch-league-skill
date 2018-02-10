@@ -98,25 +98,10 @@ function getNextMatch(rawOffset, self) {
 		self.emit(':responseReady');
 	}
 
-	// if (teamSlot && teamSlot.value) {
-	// 	team = teamSlot.value.toLowerCase();
-	// } else {
-	// 	console.log('No team seemed to be specified...');
-	// 	self.emit(':tell', self.t('SHUTDOWN_MSG'));
-	// }
-
-	// // get team id
-	// const id = teamIDs[team];
-
 	// prepare the url
 	const url = OWL_URL + 'teams/' + id
 
 	getOWL(url, nextMatch, team, rawOffset, self);
-
-	// } else {
-	// 	self.response.speak(self.t('INVALID_TEAM_MSG', team)).listen(self.t('TEAM_REPROMPT'));
-	// 	self.emit(':responseReady');
-	// }
 }
 
 function nextMatch(response, team, rawOffset, self) {
