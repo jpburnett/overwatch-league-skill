@@ -4,7 +4,7 @@
 const https = require("https");
 
 // set up environment
-const teamID = '4405';
+const teamID = '4410';
 const teamsURL = "https://api.overwatchleague.com/teams/";
 const url = teamsURL+teamID;
 
@@ -109,9 +109,10 @@ function nextMatch(response) {
 			liveMatchContent = `A game for the ${home.name} is happening right now!\n${introStatus}. The ${home.name} are ${matchStatus} the ${matchCompetitor.name}. The score is ${scores[0].value} to ${scores[1].value}. In their next game, `;
 		}
 		// alexa takes over from here
-		const calTime = getCalendarMatchDate(nextMatch.startDate);
+		const calTime = getCalendarMatchDate(nextMatch.startDate, now);
+		console.log(calTime);
 		const vsPhrase = getRandomEntry(vs);
-		let nextMatchContent = `The ${home.name} will ${vsPhrase} the ${away.name} on ${calTime.month} ${calTime.day} at ${calTime.clkStr}`
+		let nextMatchContent = `The ${home.name} will ${vsPhrase} the ${away.name} on ${calTime.month} ${calTime.date} at ${calTime.clkStr}`
 
 		let speechOutput = liveMatchContent + nextMatchContent;
 		console.log(speechOutput);
@@ -150,23 +151,54 @@ function compareTimes(a,b) {
 }
 
 // helper functions
-function getCalendarMatchDate(secondsSinceEpoch) {
+function getCalendarMatchDate(matchTimeSeconds, nowSeconds) {
 	const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-	let date = new Date(secondsSinceEpoch);
+	const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-	const y = date.getFullYear();
-	const m = months[date.getMonth()];
-	const d = date.getDate();
-	const clkStr = date.toLocaleTimeString('en-US')
+	let date = new Date(matchTimeSeconds);
+
+	let y = date.getFullYear();
+	let m = date.getMonth();
+	let d = date.getDate();
+	const dow1 = date.getDay();
+	const clkStr = date.toLocaleTimeString('en-US');
 
 	let dateObj = {
 		year: y,
-		month: m,
-		day: d,
-		clkStr: clkStr
+		month: months[m],
+		date: d,
+		dow: weekdays[dow1],
+		clkStr: clkStr,
+		isToday: 0,
+		isTomorrow: 0,
 	};
-	//const dateStr = m + " " + d + " " + y +" " + clkStr;
-	//return dateStr;
+
+	// How about relative to today?
+	let isToday = 0;
+	let isTomorrow = 0;
+
+	let now = new Date(nowSeconds);
+	y = now.getFullYear();
+	m = now.getMonth();
+	d = now.getDate();
+	const dow2 = now.getDay();
+
+	// check if the game is today
+	if(dow1 === dow2) {
+		dateObj.isToday = 1;
+	} else {
+	// check if it is tomorrow.
+		let midnightNow = new Date(y, m, d, 23, 59,59,999); // need to change back to 23 when on server in UTC. Constructor adds offset.
+		midnightNow = midnightNow.getTime();
+		console.log(midnightNow);
+		let midnightTomorrow = new Date(midnightNow+(24*3600*1000));
+		midnightTomorrow = midnightTomorrow.getTime();
+
+		if (midnightNow < matchTimeSeconds && midnightTomorrow > matchTimeSeconds) {
+			dateObj.isTomorrow = 1;
+		}
+	}
+
 	return dateObj;
 }
 
