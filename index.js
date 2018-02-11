@@ -112,7 +112,7 @@ exports.handler = function(event, context) {
 // Intent functions
 //////////////////////////////////////////////////////////////////////////////
 function closeWithAuido(self) {
-	const audioUrl = "https://s3.amazonaws.com/overwatchsounds/sounds/more_heros2.mp3?versionid=3ofPK44vU4q6NgqaUAQS82blH.NgKK_B";
+	const audioUrl = "";
 	const behavior = "REPLACE_ALL";
 	const offsetInMilliseconds = 0;
 	self.response.audioPlayerPlay(behavior, audioUrl, offsetInMilliseconds);
