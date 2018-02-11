@@ -2,14 +2,17 @@
 
 const Alexa = require('alexa-sdk');
 const https = require("https");
-
 const languageStrings = require('./languageStrings').languageStrings;
-const teams = require('./teamID').teams;
+const appResources = require('./resources');
+
+const KEYS = appResources.API_KEYS;
+const AUDIO = appResources.AUDIO;
+const TEAMS = appResources.TEAMS;
 
 const OWL_URL = "https://api.overwatchleague.com/";
 
-const APP_ID = "";
-const GOOGAPI = "";
+const APP_ID = KEYS.APP_ID;
+const GOOG_API = KEYS.GOOG_API;
 
 //////////////////////////////////////////////////////////////////////////////
 // Intents
@@ -17,12 +20,10 @@ const GOOGAPI = "";
 const handlers = {
 
 	'LaunchRequest' : function() {
-		const hiThere = "";
-		const moreHeros = "";
-		let speechOutput = this.t('WELCOME_MSG', getRandomEntry(teams));
-		let ssmlSpeech = `<audio src=\"${hiThere}\" /> ${speechOutput} And, remember, <audio src=\"${moreHeros}\" />`; // can embbed the speech in the ssml since it is a short clip.
+		const speechOutput = this.t('WELCOME_MSG', getRandomEntry(TEAMS));
+		const ssmlSpeech = `<audio src=\"${AUDIO.hiThere}\" /> ${speechOutput} And, remember, <audio src=\"${AUDIO.moreHeros}\" />`; // can embbed the speech in the ssml since it is a short clip.
+		const reprompt = this.t('WELCOME_REPROMPT', getRandomEntry(TEAMS));
 
-		let reprompt = this.t('WELCOME_REPROMPT', getRandomEntry(teams));
 		this.response.speak(ssmlSpeech).listen(reprompt);
 		this.emit(':responseReady');
 	},
@@ -47,47 +48,19 @@ const handlers = {
 		apiCall(options, getPostalCode, requestPermissions, self);
 
 	},
-	'AMAZON.PauseIntent' : function() {
-		this.response.audioPlayerStop();
-		this.emit(':responseReady');
-	},
-	'AMAZON.ResumeIntent' : function() {
-		// If we want to start from where it was paused we need dynamoDB. Overkill for a 4 second clip.
-		const audioUrl = "";
-		const behavior = "REPLACE_ALL";
-		let offsetInMilliseconds = 0;
-
-		this.response.audioPlayerPlay(behavior, audioUrl, offsetInMilliseconds);
-		this.emit(':responseReady');
-	},
 	'AMAZON.CancelIntent' : function() {
 		var self = this;
-		closeWithAuido(self);
+		closeWithSSMLAudio(self);
 	},
 	'AMAZON.StopIntent' : function() {
 		var self = this;
-		closeWithAuido(self);
+		closeWithSSMLAudio(self);
 	},
 	'Unhandled' : function() {
 		console.log("error: Unhandled intent");
 		var self = this;
-		closeWithAuido(self);
-	},
-	'PlaybackStarted' : function() {
-    	console.log('Alexa begins playing the audio stream');
-    },
-    'PlaybackFinished' : function() {
-    	console.log('The stream comes to an end');
-    },
-    'PlaybackStopped' : function() {
-    	console.log('Alexa stops playing the audio stream');
-    },
-    'PlaybackNearlyFinished' : function() {
-    	console.log('The currently playing stream is nearly complate and the device is ready to receive a new stream');
-    },
-    'PlaybackFailed' : function() {
-    	console.log('Alexa encounters an error when attempting to play a stream');
-    }
+		closeWithSSMLAudio(self);
+	}
 }
 
 
@@ -111,11 +84,9 @@ exports.handler = function(event, context) {
 //////////////////////////////////////////////////////////////////////////////
 // Intent functions
 //////////////////////////////////////////////////////////////////////////////
-function closeWithAuido(self) {
-	const audioUrl = "";
-	const behavior = "REPLACE_ALL";
-	const offsetInMilliseconds = 0;
-	self.response.audioPlayerPlay(behavior, audioUrl, offsetInMilliseconds);
+function closeWithSSMLAudio(self) {
+	const ssmlSpeech = `Goodbye! And don't forget, <audio src=\"${AUDIO.moreHeros}\" />`;
+	self.response.speak(ssmlSpeech);
 	self.emit(':responseReady');
 }
 
@@ -346,7 +317,7 @@ function getPostalCode(response, self) {
 
 	const latLonOptions = {
 		host: 'maps.googleapis.com',
-		path: `/maps/api/geocode/json?address=${countryCode},${postalCode}&key=${GOOGAPI}`,
+		path: `/maps/api/geocode/json?address=${countryCode},${postalCode}&key=${GOOG_API}`,
 		method: 'GET'
 	};
 
@@ -363,7 +334,7 @@ function getLatLon(response, self) {
 
 	const gmapstzOptions = {
 		host: 'maps.googleapis.com',
-		path: `/maps/api/timezone/json?location=${lat},${lon}&timestamp=${timestamp}&key=${GOOGAPI}`,
+		path: `/maps/api/timezone/json?location=${lat},${lon}&timestamp=${timestamp}&key=${GOOG_API}`,
 		method: 'GET'
 	};
 
