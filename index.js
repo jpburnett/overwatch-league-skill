@@ -4,19 +4,27 @@ const Alexa = require('alexa-sdk');
 const https = require("https");
 
 const languageStrings = require('./languageStrings').languageStrings;
+const teams = require('./teamID').teams;
 
 const OWL_URL = "https://api.overwatchleague.com/";
 
 const APP_ID = "";
 const GOOGAPI = "";
 
-////////////////////////////////////////////////
-// console.log(new Date().getTimezoneOffset());
+//////////////////////////////////////////////////////////////////////////////
+// Intents
+//////////////////////////////////////////////////////////////////////////////
 const handlers = {
 
 	'LaunchRequest' : function() {
-		let speechOutput = this.t('WELCOME_MSG');
-		this.emit(':tell', speechOutput);
+		const hiThere = "";
+		const moreHeros = "";
+		let speechOutput = this.t('WELCOME_MSG', getRandomEntry(teams));
+		let ssmlSpeech = `<audio src=\"${hiThere}\" /> ${speechOutput} And, remember, <audio src=\"${moreHeros}\" />`; // can embbed the speech in the ssml since it is a short clip.
+
+		let reprompt = this.t('WELCOME_REPROMPT', getRandomEntry(teams));
+		this.response.speak(ssmlSpeech).listen(reprompt);
+		this.emit(':responseReady');
 	},
 	'GetNextMatchIntent' : function() {
 		// need to propagate alexa through the asynch chain, cast as 'self'.
@@ -39,20 +47,53 @@ const handlers = {
 		apiCall(options, getPostalCode, requestPermissions, self);
 
 	},
+	'AMAZON.PauseIntent' : function() {
+		this.response.audioPlayerStop();
+		this.emit(':responseReady');
+	},
+	'AMAZON.ResumeIntent' : function() {
+		// If we want to start from where it was paused we need dynamoDB. Overkill for a 4 second clip.
+		const audioUrl = "";
+		const behavior = "REPLACE_ALL";
+		let offsetInMilliseconds = 0;
+
+		this.response.audioPlayerPlay(behavior, audioUrl, offsetInMilliseconds);
+		this.emit(':responseReady');
+	},
 	'AMAZON.CancelIntent' : function() {
-		this.emit(':tell', this.t('SHUTDOWN_MSG'));
+		var self = this;
+		closeWithAuido(self);
 	},
 	'AMAZON.StopIntent' : function() {
-		this.emit(':tell', this.t('SHUTDOWN_MSG'));
+		var self = this;
+		closeWithAuido(self);
 	},
 	'Unhandled' : function() {
 		console.log("error: Unhandled intent");
-		this.emit(':tell', this.t('SHUTDOWN_MSG'));
-	}
+		var self = this;
+		closeWithAuido(self);
+	},
+	'PlaybackStarted' : function() {
+    	console.log('Alexa begins playing the audio stream');
+    },
+    'PlaybackFinished' : function() {
+    	console.log('The stream comes to an end');
+    },
+    'PlaybackStopped' : function() {
+    	console.log('Alexa stops playing the audio stream');
+    },
+    'PlaybackNearlyFinished' : function() {
+    	console.log('The currently playing stream is nearly complate and the device is ready to receive a new stream');
+    },
+    'PlaybackFailed' : function() {
+    	console.log('Alexa encounters an error when attempting to play a stream');
+    }
 }
 
 
-////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+// Initialize Alexa and connect the application 
+//////////////////////////////////////////////////////////////////////////////
 exports.handler = function(event, context) {
 	
 	const alexa = Alexa.handler(event, context);
@@ -67,8 +108,20 @@ exports.handler = function(event, context) {
 }
 
 
-////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // Intent functions
+//////////////////////////////////////////////////////////////////////////////
+function closeWithAuido(self) {
+	const audioUrl = "https://s3.amazonaws.com/overwatchsounds/sounds/more_heros2.mp3?versionid=3ofPK44vU4q6NgqaUAQS82blH.NgKK_B";
+	const behavior = "REPLACE_ALL";
+	const offsetInMilliseconds = 0;
+	self.response.audioPlayerPlay(behavior, audioUrl, offsetInMilliseconds);
+	self.emit(':responseReady');
+}
+
+function closeWithSpeech(self) {
+	self.emit(':tell', self.t('SHUTDOWN_MSG'));
+}
 
 function getNextMatch(rawOffset, self) {
 	// 	now we can finally go get a team.	
@@ -140,18 +193,24 @@ function nextMatch(response, team, rawOffset, self) {
 		let matchCompetitor = {};
 		if (liveMatch.id) {
 			scores = liveMatch.scores;
+			//We need to first find out who's who
+			const team1 = liveMatch.competitors[0];
+			const team2 = liveMatch.competitors[1];
 
-			// if tied we can just zoom on through
+			const isTeam1 = (team1.id === teamId? 1: 0);
+
+			// Are we tied
 			if (scores[0].value === scores[1].value) {
 				isTied = 1;
+				introStatus = getRandomEntry(introTied);
+				matchStatus = getRandomEntry(statusTied);
+				if (isTeam1) {
+					matchCompetitor = team2;
+				} else {
+					matchCompetitor = team1;
+				}
 			} else {
-				//else we need to find out who's who
-				const team1 = liveMatch.competitors[0];
-				const team2 = liveMatch.competitors[1];
-
-
-				const isTeam1 = (team1.id === teamId? 1: 0);
-				isWinning = 0;
+				// Are we winning or losing
 				if (isTeam1) {
 					if (scores[0].value > scores[1].value) {
 						isWinning = 1;
@@ -168,18 +227,13 @@ function nextMatch(response, team, rawOffset, self) {
 					scores[1] = tmp;
 				}
 			}
-
-			if (isTied) {
-				introStatus = getRandomEntry(introTied);
-				matchStatus = getRandomEntry(statusTied);
+			// set phrase status
+			if (isWinning) {
+				introStatus = getRandomEntry(introWinning);
+				matchStatus = getRandomEntry(statusWinning);
 			} else {
-				if (isWinning) {
-					introStatus = getRandomEntry(introWinning);
-					matchStatus = getRandomEntry(statusWinning);
-				} else {
-					introStatus = getRandomEntry(introLosing);
-					matchStatus = getRandomEntry(statusLosing);
-				}
+				introStatus = getRandomEntry(introLosing);
+				matchStatus = getRandomEntry(statusLosing);
 			}
 		}
 
@@ -195,16 +249,26 @@ function nextMatch(response, team, rawOffset, self) {
 				away = competitors[j];
 			}
 		}
-		const calTime = getCalendarMatchDate(nextMatch.startDate, rawOffset*1000);
+		const calTime = getCalendarMatchDate(nextMatch.startDate, now, rawOffset*1000);
 
-		// configure the output and return to alexa
+		// configure the output and prepare alexa response
+		// prepare speech
 		let liveMatchContent = "";
 		if (liveMatch.id) {
 			liveMatchContent = `A game for the ${home.name} is happening right now!\n\n${introStatus}. The ${home.name} are ${matchStatus} the ${matchCompetitor.name}. The score is ${scores[0].value} to ${scores[1].value}.\n\nIn their next game, `;
 		}
 
 		const vsPhrase = getRandomEntry(vs);
-		let nextMatchContent = `The ${home.name} will ${vsPhrase} the ${away.name} on ${calTime.month} ${calTime.day} at ${calTime.clkStr}.`
+		let nextMatchContent = `The ${home.name} will ${vsPhrase} the ${away.name}`;
+		if (calTime.isToday) {
+			nextMatchContent = `${nextMatchContent} today at ${calTime.clkStr}.`;
+		} else if (calTime.isTomrrow) {
+			nextMatchContent = `${nextMatchContent} tomorrow at ${calTime.clkStr}.`;
+		} else {
+			nextMatchContent = `${nextMatchContent} on ${calTime.dow} ${calTime.month} ${calTime.date} at ${calTime.clkStr}.`
+		}
+		const speechOutput = `${liveMatchContent}${nextMatchContent}`;
+
 		// prepare card
 		const cardTitle = "Match Details";
 		const cardContent = `${liveMatchContent}${nextMatchContent}\n\nTheir record is ${response.ranking.matchWin}-${response.ranking.matchLoss}.`;
@@ -212,10 +276,9 @@ function nextMatch(response, team, rawOffset, self) {
 			smallImageUrl: home.logo,
 			largeImageUrl: home.logo
 		};
-		self.response.cardRenderer(cardTitle, cardContent, cardImg);
-		// prepare speech
-		let speechOutput = `${liveMatchContent}${nextMatchContent}`;
 
+		// configure alexa
+		self.response.cardRenderer(cardTitle, cardContent, cardImg);
 		self.response.speak(speechOutput);
 		self.emit(':responseReady');
 	}
@@ -276,8 +339,9 @@ function getPostalCode(response, self) {
 		countryCode = response.countryCode;
 		postalCode = response.postalCode;
 	} else {
-		// need to generate a better error response
-		self.emit(':tell', "Error making request.");
+		//TODO: Maybe generate a better error response
+		self.response.speak(self.t('API_ERROR_MSG'));
+		self.emit(':responseReady');
 	}
 
 	const latLonOptions = {
@@ -330,28 +394,62 @@ function compareTimes(a,b) {
 	return 0;
 }
 
-function getCalendarMatchDate(secondsSinceEpoch, rawOffset) {
+function getCalendarMatchDate(matchTimeSeconds, nowSeconds, rawOffset) {
 
 	if (rawOffset) {
-		secondsSinceEpoch = secondsSinceEpoch + rawOffset;
+		matchTimeSeconds = matchTimeSeconds + rawOffset;
+	} else {
+		rawOffset = 0;
 	}
 
 	const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-	let date = new Date(secondsSinceEpoch);
+	const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-	const y = date.getFullYear();
-	const m = months[date.getMonth()];
-	const d = date.getDate();
-	const clkStr = date.toLocaleTimeString('en-US')
+	let date = new Date(matchTimeSeconds);
+
+	let y = date.getFullYear();
+	let m = date.getMonth();
+	let d = date.getDate();
+	const dow1 = date.getDay();
+	const clkStr = date.toLocaleTimeString('en-US');
 
 	let dateObj = {
 		year: y,
-		month: m,
-		day: d,
-		clkStr: clkStr
+		month: months[m],
+		date: d,
+		dow: weekdays[dow1],
+		clkStr: clkStr,
+		isToday: 0,
+		isTomorrow: 0,
 	};
-	//const dateStr = m + " " + d + " " + y +" " + clkStr;
-	//return dateStr;
+
+	// How about relative to today?
+	let isToday = 0;
+	let isTomorrow = 0;
+
+	let now = new Date(nowSeconds);
+	y = now.getFullYear();
+	m = now.getMonth();
+	d = now.getDate();
+	const dow2 = now.getDay();
+
+	// check if the game is today
+	let morningNow = new Date(y, m, d, 0, 0, 0, 0);
+	morningNow.getTime();
+	let midnightNow = new Date(y, m, d, 23, 59, 59, 999);
+	midnightNow = midnightNow.getTime();
+	if (morningNow < matchTimeSeconds-rawOffset && midnightNow > matchTimeSeconds-rawOffset) {
+		dateObj.isToday = 1;
+	} else {
+		// check if it is tomorrow.
+		let midnightTomorrow = new Date(midnightNow+(24*3600*1000));
+		midnightTomorrow = midnightTomorrow.getTime();
+
+		if (midnightNow < matchTimeSeconds-rawOffset && midnightTomorrow > matchTimeSeconds-rawOffset) {
+			dateObj.isTomorrow = 1;
+		}
+	}
+
 	return dateObj;
 }
 
