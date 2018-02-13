@@ -8,7 +8,6 @@ const appResources = require('./resources');
 const KEYS = appResources.API_KEYS;
 const AUDIO = appResources.AUDIO;
 const TEAMS = appResources.TEAMS;
-
 const OWL = appResources.OWL;;
 
 const APP_ID = KEYS.APP_ID;
@@ -67,6 +66,17 @@ const handlers = {
 		const callback = self.attributes.owlCallback.pop();
 		callback(self);
 	},
+	'GetStandings' : function () {
+		// need to propagate alexa through the asynch chain, cast as 'self'.
+		var self = this;
+
+		self.attributes.owlCallback = [getTeamStandings,
+										getRankings];
+
+		const callback = self.attributes.owlCallback.pop();
+		callback(self);
+
+	},
 	'GetCurrentStage' : function () {
 		var self = this;
 
@@ -114,6 +124,72 @@ exports.handler = function(event, context) {
 //////////////////////////////////////////////////////////////////////////////
 // Intent implementation functions
 //////////////////////////////////////////////////////////////////////////////
+function getTeamStandings(response, self) {
+	if (response == '') {
+		// something went wrong, OWL API returned nothing. TODO: improve this if necessary
+		console.log("Error, response was empty.");
+		self.response.speak(self.t('API_ERROR_MSG'));
+		self.emit(':responseReady');
+	} else {
+		const rankings = response.content;
+		const numberSlot = self.event.request.intent.slots["AMAZON.NUMBER"];
+		let numTeams = 0;
+		// need to handle user saying zero....
+		if (numberSlot && numberSlot.value) {
+			numTeams = numberSlot.value;	
+		} else {
+			numTeams = 3;
+		}
+
+		// Start by preparing the speech and card
+		let speechOutput = `The top ${numTeams} teams in the league right now are:`;
+		const cardTitle = "Standings";
+		let cardContent = speechOutput;
+		let cardImg = {
+			smallImageUrl: "",
+			largeImageUrl: ""
+		};
+
+		// full in the speech information
+		let i = 0;
+		for (i; i < numTeams; i++) {
+			const team = rankings[i].competitor;
+			const record = rankings[i].records;
+			const name = team.name;
+
+			if (i != numTeams -1) {
+				speechOutput = `${speechOutput} the ${name},`;
+			} else {
+				speechOutput = `${speechOutput} and the ${name}.`;
+			}
+
+			cardContent = `${cardContent}\n${name}\t${record[0].matchWin}-${record[0].matchLoss}`;
+			if (i == 0) {
+				cardImg.smallImageUrl = team.logo;
+				cardImg.largeImageUrl = team.logo;
+			}
+		}
+
+		// emit response
+		self.response.cardRenderer(cardTitle, cardContent, cardImg);
+		self.response.speak(speechOutput);
+		self.emit(':responseReady');
+		// more comprehensive analysis?
+		// // blow through the list, might be hard to keep track of a lot of spoken detail
+		// if (numTeams > 4) {
+		// 	const rankings = response.content;
+		// 	let i = 0;
+		// 	for (i; i < numTeams; i++) {
+
+		// 	}
+		// // we can get a more comprehensive analysis
+		// } else {
+
+		// }
+	} 
+}
+
+
 function getNextTeamMatch(response, self) {
 	if (response == '') {
 		// something went wrong, OWL API returned nothing. TODO: improve this if necessary
