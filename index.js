@@ -9,14 +9,13 @@ const KEYS = appResources.API_KEYS;
 const AUDIO = appResources.AUDIO;
 const TEAMS = appResources.TEAMS;
 
-const OWLRes = appResources.URL;;
-const OWL_URL = "https://api.overwatchleague.com/";
+const OWL = appResources.OWL;;
 
 const APP_ID = KEYS.APP_ID;
 const GOOG_API = KEYS.GOOG_API;
 
 //////////////////////////////////////////////////////////////////////////////
-// Intents
+// Alexa intents
 //////////////////////////////////////////////////////////////////////////////
 const handlers = {
 
@@ -29,61 +28,56 @@ const handlers = {
 		this.emit(':responseReady');
 	},
 	'GetNextTeamMatchIntent' : function() {
-		// 1. Get zipcode
-		// 2. Get the requested team information.
-		// 3. Parse team response for next match
-
 		// need to propagate alexa through the asynch chain, cast as 'self'.
 		var self = this;
 
-		// first we need to resolve the timezone
-		const deviceId = self.event.context.System.device.deviceId;
-		const token = self.event.context.System.apiAccessToken;
-		//const endpoint = self.event.context.System.apiEndpoint; // should fix this
-		const endpoint = 'api.amazonalexa.com';
-		let options = {
-			host : endpoint,
-			path : `/v1/devices/${deviceId}/settings/address/countryAndPostalCode`,
-			headers : {Authorization : `Bearer ${token}`},
-			method : 'GET',
-			port: 443
-		};
+		// the owlCallback attribute is a stack of functions used to traverse api's
+		// in order to collect the required information.
+		// 1. Get timezone from zipcode
+		// 2. determine and save offset from timezone
+		// 3. Get the requested team information
+		// 4. Parse team response for next match
+		self.attributes.owlCallback = [getNextTeamMatch,
+										getTeamById,
+										offsetFromTimezone,
+										getTimezoneFromZipLatLon];
 
-		// launch callback hell. getNextTeamMatch (i.e., owlCallback) is the function where we
-		// 'merge' back with the OWL app.
-		self.attributes.owlCallback = [];
-		self.attributes.owlCallback.push(getTeamById);
-
-		apiCall(options, getPostalCode, requestPermissions, self);
-
+		const callback = self.attributes.owlCallback.pop();
+		callback(self);
 	},
 	'GetNextMatchIntent' : function () {
-		// 1. Get zipcode
-		// 2. Get rankings.
-		// 3. From rankings determine stage, save stage or emit stage.
-		// 4. Get schedule.
-		// 5. Parse the scheudle and get the match.
-
 		// need to propagate alexa through the asynch chain, cast as 'self'.
 		var self = this;
 
-		// first we need to resolve the timezone
-		const deviceId = self.event.context.System.device.deviceId;
-		const token = self.event.context.System.apiAccessToken;
-		//const endpoint = self.event.context.System.apiEndpoint; // should fix this
-		const endpoint = 'api.amazonalexa.com';
-		let options = {
-			host : endpoint,
-			path : `/v1/devices/${deviceId}/settings/address/countryAndPostalCode`,
-			headers : {Authorization : `Bearer ${token}`},
-			method : 'GET',
-			port: 443
-		};
+		// the owlCallback attribute is a stack of functions used to traverse api's
+		// in order to collect the required information
+		// 1. Get timezone from zipcode
+		// 2. determine and save offset from timezone
+		// 3. Get rankings
+		// 4. determine stage from rankings save stage
+		// 5. Get schedule
+		// 6. Parse the scheudle and get the match
+		self.attributes.owlCallback = [getNextMatch,
+										getSchedule,
+										getStage,
+										getRankings,
+										offsetFromTimezone,
+										getTimezoneFromZipLatLon];
 
-		// launch callback hell. getStageFromRankings (i.e., owlCallback) is the function where we
-		// 'merge' back with the OWL app.
-		self.attributes.owlCallback = [getNextMatch, getSchedule, getStage, getRankings];
-		apiCall(options, getPostalCode, requestPermissions, self);
+		const callback = self.attributes.owlCallback.pop();
+		callback(self);
+	},
+	'GetCurrentStage' : function () {
+		var self = this;
+
+		// the owlCallback attribute is a stack of functions used to traverse api's
+		// in order to collect the required information
+		// 1. Get rankings
+		// 2. detremine stage from rankings and emit
+		self.attributes.owlCallback = [getStage, getRankings];
+
+		const callback = self.attributes.owlCallback.pop();
+		callback(self);
 	},
 	'AMAZON.CancelIntent' : function() {
 		var self = this;
@@ -94,6 +88,7 @@ const handlers = {
 		closeWithSSMLAudio(self);
 	},
 	'Unhandled' : function() {
+		// TODO: Launch a help message explaining available commands.
 		console.log("error: Unhandled intent");
 		var self = this;
 		closeWithSSMLAudio(self);
@@ -117,66 +112,9 @@ exports.handler = function(event, context) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// Intent functions
+// Intent implementation functions
 //////////////////////////////////////////////////////////////////////////////
-function closeWithSSMLAudio(self) {
-	const ssmlSpeech = `Goodbye! And don't forget, <audio src=\"${AUDIO.moreHeros}\" />`;
-	self.response.speak(ssmlSpeech);
-	self.emit(':responseReady');
-}
-
-function closeWithSpeech(self) {
-	self.emit(':tell', self.t('SHUTDOWN_MSG'));
-}
-
-// Get team information.
-function getTeamById(self) {
-	// 	After all that callback we can now finally work with OWL.
-	const teamSlot = self.event.request.intent.slots.Team;
-	let resolutions = {};
-	let team;
-	let id;
-
-	if (teamSlot && teamSlot.resolutions) {
-		 //TODO: check if length greater than one. We could be introuble
-		resolutions = teamSlot.resolutions.resolutionsPerAuthority[0];
-	
-		if(resolutions.status.code == "ER_SUCCESS_MATCH") {
-			const resolutionValues = resolutions.values[0];
-			team = resolutionValues.value.name;
-			id = resolutionValues.value.id;
-		} else {
-			// ow error no match. TODO: Look into if this error needs to be differnet and more helpful to the user.
-			self.response.speak(self.t('INVALID_TEAM_MSG', teamSlot.value)).listen(self.t('TEAM_REPROMPT'));
-			self.response.cardRenderer("error", resolutions.status.code);
-			self.emit(':responseReady');
-		}
-
-	} else {
-		//ow user spoke nothing with a synonym. TODO: Look into if this error needs to be differnet and more helpful to the user.
-		self.response.speak(self.t('INVALID_TEAM_MSG', team)).listen(self.t('TEAM_REPROMPT'));
-		self.emit(':responseReady');
-	}
-
-	self.attributes.team = team; //TODO: not sure team is needed any more??? Because much like id we just pull it out of the response. If anything this represents the saved "spoken" team value from Alexa
-	// prepare the url
-	// const url = OWL_URL + 'teams/' + id
-	// getOWL(url, nextTeamMatch, self);
-
-	const path = `/teams/${id}`;
-	const endpoint = 'api.overwatchleague.com';
-	let options = {
-		host : endpoint,
-		path : path,
-		method : 'GET',
-		port: 443
-	};
-
-	const callback = self.attributes.owlCallback.pop();
-	apiCall(options, nextTeamMatch, OWLErr, self);
-}
-
-function nextTeamMatch(response, self) {
+function getNextTeamMatch(response, self) {
 	if (response == '') {
 		// something went wrong, OWL API returned nothing. TODO: improve this if necessary
 		console.log("Error, response was empty.");
@@ -307,65 +245,6 @@ function nextTeamMatch(response, self) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// We use ranking because it seems like the easiest place to get the current stage
-// to minimize our next match search. ** An idea could be to make a queue of owlEndpoints
-// in the attributes that we look for to indicate if we are done or where we go next
-// with the information.... seems like a lot of work right now though
-function getRankings(self) {
-	const endpoint = 'api.overwatchleague.com';
-	let options = {
-		host : endpoint,
-		path : `/ranking`,
-		method : 'GET',
-		port: 443
-	};
-
-	const callback = self.attributes.owlCallback.pop();
-	apiCall(options, callback, OWLErr, self);
-}
-
-function getSchedule(self) {
-	const endpoint = 'api.overwatchleague.com';
-	let options = {
-		host : endpoint,
-		path : `/schedule`,
-		method : 'GET',
-		port: 443
-	};
-
-	const callback = self.attributes.owlCallback.pop();
-	apiCall(options, callback, OWLErr, self);
-}
-
-// uses ranking response to determine what stage we are in overwatch. Will break after regular season? (i.e. needs to handle playoffs.)
-function getStage(response, self) {
-	if (response == '') {
-		// something went wrong, OWL API returned nothing. TODO: improve this if necessary
-		console.log("Error, response was empty.");
-		self.response.speak(self.t('API_ERROR_MSG'));
-		self.emit(':responseReady');
-	} else {
-
-		const played = response.matchesConcluded;
-		const matchesPerStage = 60;
-
-		// need to handle playoffs.
-		self.attributes.stage = Math.floor(played/matchesPerStage) + 1; //idx representing stage in stages array returned from /schedule endpoint. preason=0, regular season=1-4, playoffs=5, finals=6, all-star=7.
-	}
-
-	const callback = self.attributes.owlCallback.pop();
-	if (callback != null) {
-		const options = null;
-		apiCall(options, callback, OWLErr, self);
-	} else {
-		// TODO: improve alexa response if we want to.
-		const speechOutput = "Overwatch league is current in stage ${2}.";
-		self.response.speak(speechOutput);
-		self.emit(':responseReady');
-	}
-}
-
 // Get ANY next OWL match
 function getNextMatch(response, self) {
 	// get anything saved in event attributes we picked up along the way.
@@ -427,11 +306,11 @@ function getNextMatch(response, self) {
 	// prepare speech
 	let liveMatchContent = "";
 	if (liveMatch.id) {
-		liveMatchContent = `There is a live game right now! The ${team1.name} are ${matchStatus} the ${team2.name}. The score is ${scores[0].value} to ${scores[1].value}. `;
+		liveMatchContent = `There is a live game right now! The ${team1.name} are ${matchStatus} the ${team2.name}. The score is ${scores[0].value} to ${scores[1].value}. After this game,`;
 	}
 
 	const vsPhrase = getRandomEntry(vs);
-	let nextMatchContent = `The ${team1.name} will ${vsPhrase} the ${team2.name}`;
+	let nextMatchContent = `The next match will be`;
 	if (calTime.isToday) {
 		nextMatchContent = `${nextMatchContent} today at ${calTime.clkStr}.`;
 	} else if (calTime.isTomrrow) {
@@ -439,14 +318,15 @@ function getNextMatch(response, self) {
 	} else {
 		nextMatchContent = `${nextMatchContent} on ${calTime.dow} ${calTime.month} ${calTime.date} at ${calTime.clkStr}.`
 	}
+	nextMatchContent = `${nextMatchContent} The ${team1.name} will ${vsPhrase} the ${team2.name}`;
 	const speechOutput = `${liveMatchContent}${nextMatchContent}`;
 
 	// prepare card
 	const cardTitle = "Match Details";
 	const cardContent = `${liveMatchContent}${nextMatchContent}`;
 	const cardImg = {
-		smallImageUrl: OWLRes.Logo,
-		largeImageUrl: OWLRes.logo
+		smallImageUrl: OWL.LOGO,
+		largeImageUrl: OWL.LOGO
 	};
 
 	// configure alexa
@@ -454,21 +334,57 @@ function getNextMatch(response, self) {
 	self.response.speak(speechOutput);
 	self.emit(':responseReady');
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// connect to overwatch api ** this now looks like apiCall shoudl combine
-function getOWL(url, callback, self) {
-	https.get(url, res => {
-		res.setEncoding("utf8");
-		let body = "";
-		res.on("data", data => {
-			body += data;
-		});
-		res.on("end", () => {
-			body = JSON.parse(body);
-			return callback(body, self);
-		});
-	});
+// Expects ranking information as the response to determine current stage. 
+// TODO: Will break after regular season? (i.e. needs to handle playoffs.)
+function getStage(response, self) {
+	if (response == '') {
+		// something went wrong, OWL API returned nothing.
+		// TODO: improve this if necessary
+		console.log("Error, response was empty.");
+		self.response.speak(self.t('API_ERROR_MSG'));
+		self.emit(':responseReady');
+	} else {
+
+		const played = response.matchesConcluded;
+		const matchesPerStage = 60;
+
+		// need to handle playoffs.
+		self.attributes.stage = Math.floor(played/matchesPerStage) + 1; //idx representing stage in stages array returned from /schedule endpoint. preason=0, regular season=1-4, playoffs=5, finals=6, all-star=7.
+	}
+
+	const callback = self.attributes.owlCallback.pop();
+	if (callback != null) {
+		const options = null;
+		apiCall(options, callback, OWLErr, self);
+	} else {
+		// TODO: improve alexa response if we want to.
+		// prepare speech output
+		const speechOutput = `Overwatch league is currently in stage ${self.attributes.stage}.`;
+
+		// prepare card
+		const cardTitle = "Current Stage";
+		const cardContent = `${speechOutput}`;
+		const cardImg = {
+			smallImageUrl: OWL.LOGO,
+			largeImageUrl: OWL.LOGO
+		};
+
+		// configure alexa
+		self.response.cardRenderer(cardTitle, cardContent, cardImg);
+		self.response.speak(speechOutput);
+		self.emit(':responseReady');
+	}
+}
+
+function closeWithSSMLAudio(self) {
+	const ssmlSpeech = `Goodbye! And don't forget, <audio src=\"${AUDIO.moreHeros}\" />`;
+	self.response.speak(ssmlSpeech);
+	self.emit(':responseReady');
+}
+
+function closeWithSpeech(self) {
+	self.emit(':tell', self.t('SHUTDOWN_MSG'));
 }
 
 function requestPermissions(self) {
@@ -483,10 +399,25 @@ function requestPermissions(self) {
 	self.emit(':responseReady');
 }
 
-//owlCallback is the intended endpoint when all the information (i.e., timezone)
+function OWLErr(self) {
+	self.response.speak(self.t('API_ERROR_MSG'));
+	self.emit(':responseReady');
+}
+
+function googleErr(self) {
+	self.response.speak(self.t('API_ERROR_MSG'));
+	self.emit(':responseReady');
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Accessing OWL and Google APIs
+///////////////////////////////////////////////////////////////////////////////
+
+// Generic method to handle any api call. In OWL the callbacks are stack of functions to trace
+// connecting to different APIs if necessary to gather all information. To have a funciton in
+// the stack that doesn't require a connection (i.e., when getting any next match and we get
+// stage information from rankings set options to null to pass through).
 function apiCall(options, callback, error, self) {
-	// this is here to allow pass through of different data that did not require an api call and since a lot
-	// of methods require an api call compared to the few that don't just handled it here.
 	if (options == null) {
 		callback(self);
 	} else {
@@ -510,7 +441,93 @@ function apiCall(options, callback, error, self) {
 	}
 }
 
-function getPostalCode(response, self) {
+// Get team information
+function getTeamById(self) {
+	// 	After all that callback we can now finally work with OWL.
+	const teamSlot = self.event.request.intent.slots.Team;
+	let resolutions = {};
+	let team;
+	let id;
+
+	if (teamSlot && teamSlot.resolutions) {
+		 //TODO: check if length greater than one. We could be introuble
+		resolutions = teamSlot.resolutions.resolutionsPerAuthority[0];
+	
+		if(resolutions.status.code == "ER_SUCCESS_MATCH") {
+			const resolutionValues = resolutions.values[0];
+			team = resolutionValues.value.name;
+			id = resolutionValues.value.id;
+		} else {
+			// ow error no match. TODO: Look into if this error needs to be differnet and more helpful to the user.
+			self.response.speak(self.t('INVALID_TEAM_MSG', teamSlot.value)).listen(self.t('TEAM_REPROMPT'));
+			self.response.cardRenderer("error", resolutions.status.code);
+			self.emit(':responseReady');
+		}
+
+	} else {
+		//ow user spoke nothing with a synonym. TODO: Look into if this error needs to be differnet and more helpful to the user.
+		self.response.speak(self.t('INVALID_TEAM_MSG', team)).listen(self.t('TEAM_REPROMPT'));
+		self.emit(':responseReady');
+	}
+
+	//TODO: not sure team is needed any more??? Because much like id we just pull it out of the response. If anything this represents the saved "spoken" team value from Alexa
+	self.attributes.team = team;
+
+	const path = `/teams/${id}`;
+	let options = {
+		host : OWL.API,
+		path : path,
+		method : 'GET',
+		port: 443
+	};
+
+	const callback = self.attributes.owlCallback.pop();
+	apiCall(options, callback, OWLErr, self);
+}
+
+// Get all ranking information
+function getRankings(self) {
+	let options = {
+		host : OWL.API,
+		path : `/ranking`,
+		method : 'GET',
+		port: 443
+	};
+
+	const callback = self.attributes.owlCallback.pop();
+	apiCall(options, callback, OWLErr, self);
+}
+
+// Get full match schedule
+function getSchedule(self) {
+	let options = {
+		host : OWL.API,
+		path : `/schedule`,
+		method : 'GET',
+		port: 443
+	};
+
+	const callback = self.attributes.owlCallback.pop();
+	apiCall(options, callback, OWLErr, self);
+}
+
+// Get timezone, launches getLatLon and getTimezone
+function getTimezoneFromZipLatLon(self) {
+	const deviceId = self.event.context.System.device.deviceId;
+	const token = self.event.context.System.apiAccessToken;
+
+	let options = {
+		host : 'api.amazonalexa.com',
+		path : `/v1/devices/${deviceId}/settings/address/countryAndPostalCode`,
+		headers : {Authorization : `Bearer ${token}`},
+		method : 'GET',
+		port: 443
+	};
+
+	apiCall(options, getLatLon, googleErr, self);
+}
+
+function getLatLon(response, self) {
 	let countryCode = "";
 	let postalCode = "";
 	if (response.countryCode && response.postalCode) {
@@ -528,10 +545,10 @@ function getPostalCode(response, self) {
 		method: 'GET'
 	};
 
-	apiCall(latLonOptions, getLatLon, googleErr, self);
+	apiCall(latLonOptions, getTimezone, googleErr, self);
 }
 
-function getLatLon(response, self) {
+function getTimezone(response, self) {
 	const city = response.results[0].address_components[1].short_name;
 	const state = response.results[0].address_components[3].short_name;
 	const lat = response.results[0].geometry.location.lat;
@@ -544,10 +561,11 @@ function getLatLon(response, self) {
 		method: 'GET'
 	};
 
-	apiCall(gmapstzOptions, getTimezone, googleErr, self);
+	const callback = self.attributes.owlCallback.pop();
+	apiCall(gmapstzOptions, callback, googleErr, self);
 }
 
-function getTimezone(response, self) {
+function offsetFromTimezone(response, self) {
 	const timezone = response.timeZoneId;
 	const rawOffset = response.rawOffset;
 
@@ -555,16 +573,6 @@ function getTimezone(response, self) {
 
 	const callback = self.attributes.owlCallback.pop();
 	callback(self);
-}
-
-function OWLErr(self) {
-	self.response.speak(self.t('API_ERROR_MSG'));
-	self.emit(':responseReady');
-}
-
-function googleErr(self) {
-	self.response.speak(self.t('API_ERROR_MSG'));
-	self.emit(':responseReady');
 }
 
 ////////////////////////////////////////////////
