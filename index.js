@@ -66,7 +66,7 @@ const handlers = {
 		const callback = self.attributes.owlCallback.pop();
 		callback(self);
 	},
-	'GetStandings' : function () {
+	'GetStandingsIntent' : function () {
 		// need to propagate alexa through the asynch chain, cast as 'self'.
 		var self = this;
 
@@ -77,7 +77,7 @@ const handlers = {
 		callback(self);
 
 	},
-	'GetCurrentStage' : function () {
+	'GetCurrentStageIntent' : function () {
 		var self = this;
 
 		// the owlCallback attribute is a stack of functions used to traverse api's
@@ -88,6 +88,17 @@ const handlers = {
 
 		const callback = self.attributes.owlCallback.pop();
 		callback(self);
+	},
+	'AMAZON.HelpIntent' : function () {
+		const team1 = getRandomEntry(TEAMS);
+		let team2 = getRandomEntry(TEAMS);
+		while (team2 == team1) {
+			team2 = getRandomEntry(TEAMS);
+		}
+		const speechOutput = this.t('HELP_MSG', team1, team2);
+		const reprompt = this.t('HELP_REPROMPT');
+		this.response.speak(speechOutput).listen('HELP_REPROMPT');
+		this.emit(':responseReady');
 	},
 	'AMAZON.CancelIntent' : function() {
 		var self = this;
@@ -113,7 +124,7 @@ exports.handler = function(event, context) {
 	const alexa = Alexa.handler(event, context);
 
 	// configure alexa
-	alexa.APP_ID = APP_ID;
+	alexa.appId = APP_ID;
 	alexa.resources = languageStrings;
 
 	// register alexa function handlers and away we go!
@@ -128,21 +139,41 @@ function getTeamStandings(response, self) {
 	if (response == '') {
 		// something went wrong, OWL API returned nothing. TODO: improve this if necessary
 		console.log("Error, response was empty.");
-		self.response.speak(self.t('API_ERROR_MSG'));
-		self.emit(':responseReady');
+		OWLErr(self);
 	} else {
 		const rankings = response.content;
 		const numberSlot = self.event.request.intent.slots["AMAZON.NUMBER"];
+		const fullSlot = self.event.request.intent.slots.Standings;
 		let numTeams = 0;
-		// need to handle user saying zero....
+		
 		if (numberSlot && numberSlot.value) {
-			numTeams = numberSlot.value;	
+			numTeams = numberSlot.value;
+			// need to handle people with a sense of humor....
+			if (numTeams == 0) {
+				const speechOutput = "I am sorry, but asking for the top zero teams is a little silly, don\'t you think?";
+				self.response.speak(speechOutput).listen(self.t('SIMPLE_REPROMPT'));
+				self.emit(':responseReady');
+			}
+			if (numTeams < 0) {
+				const speechOutput = "Even I know that makes no sense. You need to ask for a positive number.";
+				self.response.speak(speechOutput).listen(self.t('SIMPLE_REPROMPT'));
+				self.emit(':responseReady');
+			}
+		} else if (fullSlot && fullSlot.value) {
+			numTeams = 12;
+
 		} else {
+			// generally default to top 3 teams.
 			numTeams = 3;
 		}
 
 		// Start by preparing the speech and card
-		let speechOutput = `The top ${numTeams} teams in the league right now are:`;
+		let speechOutput = "";
+		if (numTeams == 12) {
+			speechOutput = "The current league standings are: "
+		} else {
+			speechOutput = `The top ${numTeams} teams in the league right now are:`;
+		}
 		const cardTitle = "Standings";
 		let cardContent = speechOutput;
 		let cardImg = {
@@ -194,8 +225,7 @@ function getNextTeamMatch(response, self) {
 	if (response == '') {
 		// something went wrong, OWL API returned nothing. TODO: improve this if necessary
 		console.log("Error, response was empty.");
-		self.response.speak(self.t('API_ERROR_MSG'));
-		self.emit(':responseReady');
+		OWLErr(self);
 	} else {
 		// set variables we saved in the Alexa event attributes to use
 		let team = self.attributes.team;
@@ -418,8 +448,7 @@ function getStage(response, self) {
 		// something went wrong, OWL API returned nothing.
 		// TODO: improve this if necessary
 		console.log("Error, response was empty.");
-		self.response.speak(self.t('API_ERROR_MSG'));
-		self.emit(':responseReady');
+		OWLErr(self);
 	} else {
 
 		const played = response.matchesConcluded;
@@ -464,8 +493,10 @@ function closeWithSpeech(self) {
 }
 
 function requestPermissions(self) {
-	let speechOutput = self.t('WELCOME_MSG');
-	speechOutput += ' In order to get match start times in your local time I need your permission to access your device information. Please see your Alexa companion app, then try your request again.';
+	const permissionsWelcome = self.t('PERMISSIONS_WELCOME');
+	const permissionsPrompt = self.t('PERMISSIONS_PROMPT');
+
+	const speechOutput = `${permissionsWelcome} ${permissionsPrompt}`;
 
 	const permissions = ["read::alexa:device:all:address:country_and_postal_code"];
 	self.response.askForPermissionsConsentCard(permissions);
@@ -476,12 +507,12 @@ function requestPermissions(self) {
 }
 
 function OWLErr(self) {
-	self.response.speak(self.t('API_ERROR_MSG'));
+	self.response.speak(self.t('OWL_API_ERR_MSG'));
 	self.emit(':responseReady');
 }
 
 function googleErr(self) {
-	self.response.speak(self.t('API_ERROR_MSG'));
+	self.response.speak(self.t('GOOG_API_ERR_MSG'));
 	self.emit(':responseReady');
 }
 
@@ -536,7 +567,6 @@ function getTeamById(self) {
 		} else {
 			// ow error no match. TODO: Look into if this error needs to be differnet and more helpful to the user.
 			self.response.speak(self.t('INVALID_TEAM_MSG', teamSlot.value)).listen(self.t('TEAM_REPROMPT'));
-			self.response.cardRenderer("error", resolutions.status.code);
 			self.emit(':responseReady');
 		}
 
@@ -600,7 +630,7 @@ function getTimezoneFromZipLatLon(self) {
 		port: 443
 	};
 
-	apiCall(options, getLatLon, googleErr, self);
+	apiCall(options, getLatLon, requestPermissions, self);
 }
 
 function getLatLon(response, self) {
@@ -611,8 +641,7 @@ function getLatLon(response, self) {
 		postalCode = response.postalCode;
 	} else {
 		//TODO: Maybe generate a better error response
-		self.response.speak(self.t('API_ERROR_MSG'));
-		self.emit(':responseReady');
+		googleErr(self);
 	}
 
 	const latLonOptions = {
@@ -625,10 +654,20 @@ function getLatLon(response, self) {
 }
 
 function getTimezone(response, self) {
-	const city = response.results[0].address_components[1].short_name;
-	const state = response.results[0].address_components[3].short_name;
-	const lat = response.results[0].geometry.location.lat;
-	const lon = response.results[0].geometry.location.lng;
+	let city = "";
+	let state = "";
+	let lat = "";
+	let lon = "";
+	if (response.results[0].address_components && response.results[0].geometry) {
+		city = response.results[0].address_components[1].short_name;
+		state = response.results[0].address_components[3].short_name;
+		lat = response.results[0].geometry.location.lat;
+		lon = response.results[0].geometry.location.lng;
+
+	} else {
+		googleErr(self);
+	}
+
 	const timestamp = Math.floor(Date.now()/1000);
 
 	const gmapstzOptions = {
@@ -642,8 +681,14 @@ function getTimezone(response, self) {
 }
 
 function offsetFromTimezone(response, self) {
-	const timezone = response.timeZoneId;
-	const rawOffset = response.rawOffset;
+	let timezone = "";
+	let rawOffset = "";
+	if (response.timeZoneId && response.rawOffset) {
+		timezone = response.timeZoneId;
+		rawOffset = response.rawOffset;
+	} else {
+		googleErr(self);
+	}
 
 	self.attributes.rawOffset = rawOffset;
 
