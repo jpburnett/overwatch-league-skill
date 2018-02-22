@@ -141,6 +141,7 @@ function getTeamStandings(response, self) {
 		console.log("Error, response was empty.");
 		OWLErr(self);
 	} else {
+		let speechOutput = "";
 		const rankings = response.content;
 		const numberSlot = self.event.request.intent.slots["AMAZON.NUMBER"];
 		const fullSlot = self.event.request.intent.slots.Standings;
@@ -150,14 +151,18 @@ function getTeamStandings(response, self) {
 			numTeams = numberSlot.value;
 			// need to handle people with a sense of humor....
 			if (numTeams == 0) {
-				const speechOutput = "I am sorry, but asking for the top zero teams is a little silly, don\'t you think?";
+				speechOutput = `${speechOutput}I am sorry, but asking for the top zero teams is a little silly, don\'t you think? Is there something else you would like to know?`;
 				self.response.speak(speechOutput).listen(self.t('SIMPLE_REPROMPT'));
 				self.emit(':responseReady');
 			}
 			if (numTeams < 0) {
-				const speechOutput = "Even I know that makes no sense. You need to ask for a positive number.";
+				speechOutput = `${speechOutput}Even I know that makes no sense. You need to ask for a positive number. Is there something else you would like to know?`;
 				self.response.speak(speechOutput).listen(self.t('SIMPLE_REPROMPT'));
 				self.emit(':responseReady');
+			}
+			if (numTeams > 12) {
+				speechOutput = `${speechOutput}I am sorry but there are only 12 teams in the league right now. I will tell you the standings for all of them.`
+				numTeams = 12;
 			}
 		} else if (fullSlot && fullSlot.value) {
 			numTeams = 12;
@@ -167,10 +172,11 @@ function getTeamStandings(response, self) {
 			numTeams = 3;
 		}
 
-		// Start by preparing the speech and card
-		let speechOutput = "";
+		// build sentence response baised on number of teams requested.
 		if (numTeams == 12) {
-			speechOutput = "The current league standings are: "
+			speechOutput = `${speechOutput} From first place to last place, the current league standings are: `
+		} else if (numTeams == 1) {
+			speechOutput = `The top team in the league right now is:`;
 		} else {
 			speechOutput = `The top ${numTeams} teams in the league right now are:`;
 		}
@@ -188,7 +194,8 @@ function getTeamStandings(response, self) {
 			const record = rankings[i].records;
 			const name = team.name;
 
-			if (i != numTeams -1) {
+			// the 'or' condition here catches if only one team name was given to give a gramatically correct sentence.
+			if (i != numTeams -1 || numTeams == 1) {
 				speechOutput = `${speechOutput} the ${name},`;
 			} else {
 				speechOutput = `${speechOutput} and the ${name}.`;
@@ -205,18 +212,6 @@ function getTeamStandings(response, self) {
 		self.response.cardRenderer(cardTitle, cardContent, cardImg);
 		self.response.speak(speechOutput);
 		self.emit(':responseReady');
-		// more comprehensive analysis?
-		// // blow through the list, might be hard to keep track of a lot of spoken detail
-		// if (numTeams > 4) {
-		// 	const rankings = response.content;
-		// 	let i = 0;
-		// 	for (i; i < numTeams; i++) {
-
-		// 	}
-		// // we can get a more comprehensive analysis
-		// } else {
-
-		// }
 	} 
 }
 
@@ -265,29 +260,25 @@ function getNextTeamMatch(response, self) {
 			const team2 = liveMatch.competitors[1];
 
 			const isTeam1 = (team1.id === teamId? 1: 0);
+			if (isTeam1) {
+				matchCompetitor = team2;
+			} else {
+				matchCompetitor = team1;
+			}
 
 			// Are we tied
 			if (scores[0].value === scores[1].value) {
 				isTied = 1;
-				introStatus = getRandomEntry(introTied);
-				matchStatus = getRandomEntry(statusTied);
-				if (isTeam1) {
-					matchCompetitor = team2;
-				} else {
-					matchCompetitor = team1;
-				}
 			} else {
 				// Are we winning or losing
 				if (isTeam1) {
 					if (scores[0].value > scores[1].value) {
 						isWinning = 1;
 					}
-					matchCompetitor = team2;
 				} else {
 					if (scores[1].value > scores[0].value) {
 						isWinning = 1;
 					}
-					matchCompetitor = team1;
 					// flip the score around, might be a better way to do this.
 					const tmp = scores[0];
 					scores[0] = scores[1];
@@ -295,7 +286,10 @@ function getNextTeamMatch(response, self) {
 				}
 			}
 			// set phrase status
-			if (isWinning) {
+			if (isTied) {
+				introStatus = getRandomEntry(introTied);
+				matchStatus = getRandomEntry(statusTied);
+			} else if (isWinning) {
 				introStatus = getRandomEntry(introWinning);
 				matchStatus = getRandomEntry(statusWinning);
 			} else {
@@ -329,7 +323,7 @@ function getNextTeamMatch(response, self) {
 		let nextMatchContent = `The ${home.name} will ${vsPhrase} the ${away.name}`;
 		if (calTime.isToday) {
 			nextMatchContent = `${nextMatchContent} today at ${calTime.clkStr}.`;
-		} else if (calTime.isTomrrow) {
+		} else if (calTime.isTomorrow) {
 			nextMatchContent = `${nextMatchContent} tomorrow at ${calTime.clkStr}.`;
 		} else {
 			nextMatchContent = `${nextMatchContent} on ${calTime.dow} ${calTime.month} ${calTime.date} at ${calTime.clkStr}.`
@@ -367,8 +361,8 @@ function getNextMatch(response, self) {
 	//compare for next start time
 	let now = Date.now()
 	let liveMatch = {}; //techincally, there could be a game happening right now.
-	while(matches[0].startDate < now) {
-		if (matches[0].endDate > now) {
+	while(matches[0].startDateTS < now) {
+		if (matches[0].endDateTS > now) {
 			// will record that a live match is happening, but will also get next match.
 			liveMatch = matches[0];
 		}
@@ -379,13 +373,14 @@ function getNextMatch(response, self) {
 	let team1Winning = 0;
 	let isTied = 0;
 	let scores = []; //array of two {} i.e. scores[i].value
+	let matchStatus = "";
 	let team1Live = {};
 	let team2Live = {};
 	if (liveMatch.id) {
 		scores = liveMatch.scores;
 		//We need to first find out who's who
-		team1 = liveMatch.competitors[0];
-		team2 = liveMatch.competitors[1];
+		team1Live = liveMatch.competitors[0];
+		team2Live = liveMatch.competitors[1];
 
 		// Are we tied
 		if (scores[0].value === scores[1].value) {
@@ -407,24 +402,25 @@ function getNextMatch(response, self) {
 	const team2 = nextMatch.competitors[1];
 	
 	const calTime = getCalendarMatchDate(nextMatch.startDateTS, now, rawOffset*1000);
+	console.log(calTime);
 
 	// configure the output and prepare alexa response
 	// prepare speech
 	let liveMatchContent = "";
 	if (liveMatch.id) {
-		liveMatchContent = `There is a live game right now! The ${team1.name} are ${matchStatus} the ${team2.name}. The score is ${scores[0].value} to ${scores[1].value}. After this game,`;
+		liveMatchContent = `There is a live game right now! The ${team1Live.name} are ${matchStatus} the ${team2Live.name}. The score is ${scores[0].value} to ${scores[1].value}. After this game, `;
 	}
 
 	const vsPhrase = getRandomEntry(vs);
 	let nextMatchContent = `The next match will be`;
 	if (calTime.isToday) {
 		nextMatchContent = `${nextMatchContent} today at ${calTime.clkStr}.`;
-	} else if (calTime.isTomrrow) {
+	} else if (calTime.isTomorrow) {
 		nextMatchContent = `${nextMatchContent} tomorrow at ${calTime.clkStr}.`;
 	} else {
 		nextMatchContent = `${nextMatchContent} on ${calTime.dow} ${calTime.month} ${calTime.date} at ${calTime.clkStr}.`
 	}
-	nextMatchContent = `${nextMatchContent} The ${team1.name} will ${vsPhrase} the ${team2.name}`;
+	nextMatchContent = `${nextMatchContent} The ${team1.name} will ${vsPhrase} the ${team2.name}.`;
 	const speechOutput = `${liveMatchContent}${nextMatchContent}`;
 
 	// prepare card
@@ -752,7 +748,7 @@ function getCalendarMatchDate(matchTimeSeconds, nowSeconds, rawOffset) {
 	let isToday = 0;
 	let isTomorrow = 0;
 
-	let now = new Date(nowSeconds);
+	let now = new Date(nowSeconds+rawOffset);
 	y = now.getFullYear();
 	m = now.getMonth();
 	d = now.getDate();
@@ -763,17 +759,28 @@ function getCalendarMatchDate(matchTimeSeconds, nowSeconds, rawOffset) {
 	morningNow.getTime();
 	let midnightNow = new Date(y, m, d, 23, 59, 59, 999);
 	midnightNow = midnightNow.getTime();
-	if (morningNow < matchTimeSeconds-rawOffset && midnightNow > matchTimeSeconds-rawOffset) {
+	if (morningNow < matchTimeSeconds && midnightNow > matchTimeSeconds) {
 		dateObj.isToday = 1;
 	} else {
 		// check if it is tomorrow.
 		let midnightTomorrow = new Date(midnightNow+(24*3600*1000));
 		midnightTomorrow = midnightTomorrow.getTime();
 
-		if (midnightNow < matchTimeSeconds-rawOffset && midnightTomorrow > matchTimeSeconds-rawOffset) {
+		if (midnightNow < matchTimeSeconds && midnightTomorrow > matchTimeSeconds) {
 			dateObj.isTomorrow = 1;
 		}
 	}
+	// if (morningNow < matchTimeSeconds-rawOffset && midnightNow > matchTimeSeconds-rawOffset) {
+	// 	dateObj.isToday = 1;
+	// } else {
+	// 	// check if it is tomorrow.
+	// 	let midnightTomorrow = new Date(midnightNow+(24*3600*1000));
+	// 	midnightTomorrow = midnightTomorrow.getTime();
+
+	// 	if (midnightNow < matchTimeSeconds-rawOffset && midnightTomorrow > matchTimeSeconds-rawOffset) {
+	// 		dateObj.isTomorrow = 1;
+	// 	}
+	// }
 
 	return dateObj;
 }
