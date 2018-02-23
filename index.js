@@ -77,7 +77,20 @@ const handlers = {
 		callback(self);
 
 	},
+	'GetTopTeamIntent' : function () {
+		// need to propagate alexa through the asynch chain, cast as 'self'.
+		var self = this;
+
+
+		self.attributes.owlCallback = [getTopTeam,
+										getRankings];
+
+		const callback = self.attributes.owlCallback.pop();
+		callback(self);
+
+	},
 	'GetCurrentStageIntent' : function () {
+		// need to propagate alexa through the asynch chain, cast as 'self'.
 		var self = this;
 
 		// the owlCallback attribute is a stack of functions used to traverse api's
@@ -135,6 +148,34 @@ exports.handler = function(event, context) {
 //////////////////////////////////////////////////////////////////////////////
 // Intent implementation functions
 //////////////////////////////////////////////////////////////////////////////
+function getTopTeam(response, self) {
+	if (response == '') {
+		// something went wrong, OWL API returned nothing. TODO: improve this if necessary
+		console.log("Error, response was empty.");
+		OWLErr(self);
+	} else {
+		const rankings = response.content;
+		const topTeam = rankings[0].competitor;
+		const record = rankings[0].records;
+		const name = topTeam.name;
+		const W = record[0].matchWin;
+		const L = record[0].matchLoss;
+
+		let speechOutput = `The ${name} are the number one team in the league right now. They have a record of ${W} wins and ${L} ${L == 1 ? 'loss' : 'losses'}.`;
+		const cardTitle = "Standings";
+		const cardContent = `The ${name} are the number one team in the league right now.\n${W}-${L}`;
+		const cardImg = {
+			smallImageUrl: topTeam.logo,
+			largeImageUrl: topTeam.logo
+		};
+
+		// emit response
+		self.response.cardRenderer(cardTitle, cardContent, cardImg);
+		self.response.speak(speechOutput);
+		self.emit(':responseReady');
+	}
+}
+
 function getTeamStandings(response, self) {
 	if (response == '') {
 		// something went wrong, OWL API returned nothing. TODO: improve this if necessary
