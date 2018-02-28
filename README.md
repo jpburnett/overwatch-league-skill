@@ -2,7 +2,7 @@
 <p align="center">
   <b>The Overwatch League Alexa Skill</b><br>
   <a href="https://www.overwatchleague.com">Overwatch League Website</a> |
-  <a href="#">Future Link To Alexa Skill Page</a> | 
+  <a href="https://www.amazon.com/Parker-Burnett-Overwatch-League/dp/B079T6GPXD/ref=sr_1_2?s=digital-skills&ie=UTF8&qid=1519791836&sr=1-2&keywords=Overwatch+League">Link To Enable Alexa Skill</a> | 
   <a href="http://alexa.parkerburnett.com">Privacy Policy Page</a>
   <br><br>
   <img src="https://bnetcmsus-a.akamaihd.net/cms/blog_thumbnail/xf/XFBEYMDR8ITH1512405756014.jpg">
