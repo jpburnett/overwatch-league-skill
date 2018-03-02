@@ -66,6 +66,16 @@ const handlers = {
 		const callback = self.attributes.owlCallback.pop();
 		callback(self);
 	},
+	'GetTeamRecordIntent' : function () {
+		// need to propagate alexa through the asynch chain, cast as 'self'.
+		var self = this;
+
+		self.attributes.owlCallback = [getTeamRecord,
+										getTeamById];
+
+		const callback = self.attributes.owlCallback.pop();
+		callback(self);
+	},
 	'GetStandingsIntent' : function () {
 		// need to propagate alexa through the asynch chain, cast as 'self'.
 		var self = this;
@@ -148,6 +158,34 @@ exports.handler = function(event, context) {
 //////////////////////////////////////////////////////////////////////////////
 // Intent implementation functions
 //////////////////////////////////////////////////////////////////////////////
+function getTeamRecord(response, self) {
+	if (response == '') {
+		// something went wrong, OWL API returned nothing. TODO: improve this if necessary
+		console.log("Error, response was empty.");
+		OWLErr(self);
+	} else {
+		const team = self.attributes.team;
+		const rankings = response.ranking;
+
+		const W = rankings.matchWin;
+		const L = rankings.matchLoss;
+
+		const speechOutput = `The ${team} have a record of ${W} wins and ${L} ${L == 1 ? 'loss' : 'losses'}.`;
+		const cardTitle = `${team}: ${W}-${L}`;
+		const cardContent = ``;
+		const cardImg = {
+			smallImageUrl: response.logo,
+			largeImageUrl: response.logo
+		};
+
+		// emit response
+		self.response.cardRenderer(cardTitle, cardContent, cardImg);
+		self.response.speak(speechOutput);
+		self.emit(':responseReady');
+
+	}
+}
+
 function getTopTeam(response, self) {
 	if (response == '') {
 		// something went wrong, OWL API returned nothing. TODO: improve this if necessary
