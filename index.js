@@ -339,16 +339,17 @@ function getTodaysMatches(response, self) {
 	}
 
 	// matches has been shifted so now check if games are still today.
-	let todaysMatches = {};
+	let todaysMatches = [];
+	let nextMatch = {};
 	let calTime = {};
 	do {
-		const nextMatch = matches[0];
-		let calTime = getCalendarMatchDate(nextMatch.startDate, now, rawOffset*1000);
+		nextMatch = matches[0];
+		calTime = getCalendarMatchDate(nextMatch.startDateTS, now, rawOffset*1000);
 		if(calTime.isToday) {
 			todaysMatches.push(nextMatch);
 		}
 		matches.shift();
-	} while (calTime.isToday)
+	} while(calTime.isToday)
 	
 	// should have all of today's matches, if any. Start building speech output.
 	let speechOutput = "";
@@ -406,7 +407,7 @@ function getTodaysMatches(response, self) {
 		}
 	} else {
 		if (todaysMatches.length > 0) {
-			todaysMatchesContent = `Today's ${todaysMatches.length == 1 ? 'game is' : 'games are'}:`;
+			todaysMatchesContent = `Today's ${todaysMatches.length == 1 ? 'game is' : 'games are'}:\n`;
 		} else {
 			todaysMatchesContent = `There are no other scheudled games today.`;
 		}
@@ -414,12 +415,14 @@ function getTodaysMatches(response, self) {
 
 	if (todaysMatches.length > 0) {
 		for (let i=0; i < todaysMatches.length; i++) {
-			const team1 = todaysMatches[i].competitors[0];
-			const team2 = todaysMatches[i].competitors[1];
+			const match = todaysMatches[i];
+			const team1 = match.competitors[0];
+			const team2 = match.competitors[1];
+			const matchTime = getCalendarMatchDate(match.startDateTS, now, rawOffset*1000);
 
-			todaysMatchesContent = `${todaysMatchesContent} the ${team1} vs. the ${team2}`;
+			todaysMatchesContent = `${todaysMatchesContent} ${team1.name} vs. ${team2.name} at ${matchTime.clkStr}`;
 			if (i != todaysMatches.length-1) {
-				todaysMatchesContent = `${todaysMatchesContent},`;
+				todaysMatchesContent = `${todaysMatchesContent}.\n`;
 			} else {
 				todaysMatchesContent = `${todaysMatchesContent}.`;
 			}
