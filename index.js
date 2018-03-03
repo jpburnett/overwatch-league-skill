@@ -66,6 +66,28 @@ const handlers = {
 		const callback = self.attributes.owlCallback.pop();
 		callback(self);
 	},
+	'GetTodayMatchesIntent' : function () {
+		// need to propagate alexa through the asynch chain, cast as 'self'.
+		var self = this;
+
+		// the owlCallback attribute is a stack of functions used to traverse api's
+		// in order to collect the required information
+		// 1. Get timezone from zipcode
+		// 2. determine and save offset from timezone
+		// 3. Get rankings
+		// 4. determine stage from rankings save stage
+		// 5. Get schedule
+		// 6. Parse the scheudle and get tonights matches from users time.
+		self.attributes.owlCallback = [getTodaysMatches,
+										getSchedule,
+										getStage,
+										getRankings,
+										offsetFromTimezone,
+										getTimezoneFromZipLatLon];
+
+		const callback = self.attributes.owlCallback.pop();
+		callback(self);									
+	},
 	'GetTeamRecordIntent' : function () {
 		// need to propagate alexa through the asynch chain, cast as 'self'.
 		var self = this;
@@ -294,6 +316,126 @@ function getTeamStandings(response, self) {
 	} 
 }
 
+function getTodaysMatches(response, self) {
+	// get what we need saved in event attributes we picked up along the way
+	let rawOffset = self.attributes.rawOffset;
+	let stageIdx = self.attributes.stage;
+
+	const stages = response.data.stages;
+	let matches = stages[stageIdx].matches;
+
+	// sort the matches
+	matches = matches.sort(compareTimesTS);
+
+	// get the current time
+	let  now = Date.now();
+	let liveMatch = {}; //technically, there could be a game happening right now.
+	while(matches[0].startDateTS < now) {
+		if (matches[0].endDateTS > now) {
+			// will record that a live match is happening, but will also get next match.
+			liveMatch = matches[0];
+		}
+		matches.shift();
+	}
+
+	// matches has been shifted so now check if games are still today.
+	let todaysMatches = {};
+	let calTime = {};
+	do {
+		const nextMatch = matches[0];
+		let calTime = getCalendarMatchDate(nextMatch.startDate, now, rawOffset*1000);
+		if(calTime.isToday) {
+			todaysMatches.push(nextMatch);
+		}
+		matches.shift();
+	} while (calTime.isToday)
+	
+	// should have all of today's matches, if any. Start building speech output.
+	let speechOutput = "";
+	const cardTitle = "Today's Matches";
+	let cardContent = "";
+	const cardImg = {
+		smallImageUrl: OWL.LOGO,
+		largeImageUrl: OWL.LOGO
+	};
+	
+	if (!liveMatch.id && !todaysMatches.length) {
+		speechOutput = "There are no scheudled Overwatch League games today.";
+		cardContent = speechOutput;
+
+		// configure alexa
+		self.response.cardRenderer(cardTitle, cardContent, cardImg);
+		self.response.speak(speechOutput);
+		self.emit(':responseReady');
+	}
+
+	// if their is a live match get that information
+	let team1Winning = 0;
+	let isTied = 0;
+	let scores = []; //array of two {} i.e. scores[i].value
+	let matchStatus = "";
+	let team1Live = {};
+	let team2Live = {};
+	if (liveMatch.id) {
+		scores = liveMatch.scores;
+		//We need to first find out who's who
+		team1Live = liveMatch.competitors[0];
+		team2Live = liveMatch.competitors[1];
+
+		// Are we tied
+		if (scores[0].value === scores[1].value) {
+			isTied = 1;
+			matchStatus = getRandomEntry(statusTied);
+		} else {
+			if(scores[0].value > scores[1].value) {
+				team1Winning = 1;
+				matchStatus = getRandomEntry(statusWinning);
+			} else {
+				matchStatus = getRandomEntry(statusLosing);
+			}
+		}
+	}
+
+	// prepare the rest of the speechOutput TODO:: don't like how complicated this is... could the flow be simpler?
+	let liveMatchContent = "";
+	let todaysMatchesContent = "";
+	if (liveMatch.id) {
+		liveMatchContent = `There is a live game right now! The ${team1Live.name} are ${matchStatus} the ${team2Live.name}. The score is ${scores[0].value} to ${scores[1].value}. After this game, `;
+		if (todaysMatches > 0) {
+			todaysMatchesContent = `Afterwards, today's remaining ${todaysMatches.length == 1 ? 'game is' : 'games are'}:`;
+		}
+	} else {
+		if (todaysMatches.length > 0) {
+			todaysMatchesContent = `Today's ${todaysMatches.length == 1 ? 'game is' : 'games are'}:`;
+		} else {
+			todaysMatchesContent = `There are no other scheudled games today.`;
+		}
+	}
+
+	if (todaysMatches.length > 0) {
+		for (let i=0; i < todaysMatches.length; i++) {
+			const team1 = todaysMatches[i].competitors[0];
+			const team2 = todaysMatches[i].competitors[1];
+
+			todaysMatchesContent = `${todaysMatchesContent} the ${team1} vs. the ${team2}`;
+			if (i != todaysMatches.length-1) {
+				todaysMatchesContent = `${todaysMatchesContent},`;
+			} else {
+				todaysMatchesContent = `${todaysMatchesContent}.`;
+			}
+		}
+	} else {
+		todaysMatchesContent = `There no scheudled games today.`;
+	}
+
+	speechOutput = `${liveMatchContent}${todaysMatchesContent}`;
+	cardContent = `${liveMatchContent}${todaysMatchesContent}`;
+
+	// emit response
+	self.response.cardRenderer(cardTitle, cardContent, cardImg);
+	self.response.speak(speechOutput);
+	self.emit(':responseReady');
+}
 
 function getNextTeamMatch(response, self) {
 	if (response == '') {
@@ -426,19 +568,19 @@ function getNextTeamMatch(response, self) {
 
 // Get ANY next OWL match
 function getNextMatch(response, self) {
-	// get anything saved in event attributes we picked up along the way.
+	// get what we need saved in event attributes we picked up along the way.
 	let rawOffset = self.attributes.rawOffset;
 	let stageIdx = self.attributes.stage; //preason=0, regular season=1-4, playoffs=5, finals=6, all-star=7.
 
-	// there are no alexa slots for this intent so we just get to parse and build the response
+	// there is not an alexa slot needed for this intent so we just get to start to parse the api response and build the speechOutput
 	const stages = response.data.stages;
 	let matches = stages[stageIdx].matches;
 
-	//sort the matches
+	// sort the matches
 	matches = matches.sort(compareTimesTS);
 
-	//compare for next start time
-	let now = Date.now()
+	// compare for next start time
+	let now = Date.now();
 	let liveMatch = {}; //techincally, there could be a game happening right now.
 	while(matches[0].startDateTS < now) {
 		if (matches[0].endDateTS > now) {
