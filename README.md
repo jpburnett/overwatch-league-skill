@@ -8,15 +8,39 @@
   <img src="https://bnetcmsus-a.akamaihd.net/cms/blog_thumbnail/xf/XFBEYMDR8ITH1512405756014.jpg">
 </p>
 
-## What the Skill Does?
+## What Does the Skill Do?
 The Overwatch League Skill gives information about the overwatch league game schedule and scores. 
 
-Here is a list of current features:
+Here is a list of current features that you can ask Alexa:
 
-1. Ask Alexa when any team plays next.
-   - Ex. "Alexa open Overwatch League and ask "When does the {**team name**} play next? Team names being Outlaws, Dynasty, etc.
+1. When a team plays next:
+   - Ex. "Alexa open Overwatch League and ask When does the {**team name**} play next?" Team names being Outlaws, Dynasty, etc.
    
    Alexa will respond with the date and time of the requested teams game. Provided you granted access to your location the times should be time zone adjusted to your time zone.
+   
+2. Who plays today/tonight:
+   - Ex. "Alexa open Overwatch League and ask who plays today/tonight". 
+  
+    Alexa will give you a list of the teams that will be playing that night and give the times of the scheduled games.
+    
+3. Who the top teams are:
+   - Ex. "Alexa open Overwatch League and ask who the top team is". 
+   
+   This will tell you the number one team in the league with their wins and losses.
+   - Ex. "Alexa open Overwatch League and ask who the top teams are". 
+   
+   This will default with giving you the Top three teams in the league.
+   - Ex. "Alexa open Overwatch League and ask who the top {**any number**} teams are". 
+   
+   This case depends on how many number of teams you ask for. It can be any number from 1 to 12. You are welcome to try other numbers ;)
+   
+4. A teams record:
+   - Ex. "Alexa open Overwatch League and tell me the record of the {**team name**}"
+   
+   Or
+   - Ex. "Alexa open Overwatch League and tell me what's the record for the {**team name**}"
+   
+   Alexa will give you the record of wins and losses of the requested team. There are other variations as to how you could phrase this question, hopefully we covered them all. 
 
 
 ## Acknowledgements
