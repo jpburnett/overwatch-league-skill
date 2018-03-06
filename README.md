@@ -32,7 +32,7 @@ Here is a list of current features that you can ask Alexa:
    This will default with giving you the Top three teams in the league.
    - Ex. "Alexa open Overwatch League and ask who the top {**any number**} teams are". 
    
-   This case depends on how many number of teams you ask for. It can be any number from 1 to 12. You are welcome to try other numbers ;)
+   This case depends on how many number of teams you ask for. It can be any number from 1 to 12. You are welcome to try other numbers :wink:
    
 4. A teams record:
    - Ex. "Alexa open Overwatch League and tell me the record of the {**team name**}"
