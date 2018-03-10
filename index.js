@@ -351,10 +351,10 @@ function getYesterdaysResults(response, self) {
 	// sort the matches
 	matches = matches.sort(compareTimesTS);
 
-	// figure out when yesterday was
 	const now = Date.now();
-	const nowCal = new Date(now);
 
+	// quickly cycle through matches until run into yesterday morning
+	const nowCal = new Date(now);
 	const y = nowCal.getFullYear();
 	const m = nowCal.getMonth();
 	const d = nowCal.getDate();
@@ -367,17 +367,17 @@ function getYesterdaysResults(response, self) {
 		matches.shift();
 	}
 
+	// check relative today if there matches was yesterday
 	let yesterdaysMatches = [];
 	let calTime = {};
 	do {
 		const match = matches[0];
-		calTime = getCalendarMatchDate(match.startDateTS, morningYesterdaySec, rawOffset*1000); // something isnt' right.... I need to account for the current time some where
-		// isToday in terms of yesterday
-		if (calTime.isToday) {
+		calTime = getCalendarMatchDate(match.startDateTS, now, rawOffset*1000);
+		if (calTime.wasYesterday) {
 			yesterdaysMatches.push(match);
 		}
 		matches.shift();
-	} while(calTime.isToday)
+	} while(calTime.wasYesterday)
 
 	// Now have the yesterdays matches, so we can parse the information
 	// initialize response content
@@ -432,7 +432,6 @@ function getYesterdaysResults(response, self) {
 	self.response.cardRenderer(cardTitle, cardContent, cardImg);
 	self.response.speak(speechOutput);
 	self.emit(':responseReady');
-
 }
 
 function getTodaysMatches(response, self) {
@@ -1083,11 +1082,8 @@ function getCalendarMatchDate(matchTimeSeconds, nowSeconds, rawOffset) {
 		clkStr: clkStr,
 		isToday: 0,
 		isTomorrow: 0,
+		wasYesterday: 0
 	};
-
-	// How about relative to today?
-	let isToday = 0;
-	let isTomorrow = 0;
 
 	let now = new Date(nowSeconds+rawOffset);
 	y = now.getFullYear();
@@ -1097,19 +1093,20 @@ function getCalendarMatchDate(matchTimeSeconds, nowSeconds, rawOffset) {
 
 	// check if the game is today
 	let morningNow = new Date(y, m, d, 0, 0, 0, 0);
-	morningNow.getTime();
+	morningNow = morningNow.getTime();
+
 	let midnightNow = new Date(y, m, d, 23, 59, 59, 999);
 	midnightNow = midnightNow.getTime();
-	if (morningNow < matchTimeSeconds && midnightNow > matchTimeSeconds) {
-		dateObj.isToday = 1;
-	} else {
-		// check if it is tomorrow.
-		let midnightTomorrow = new Date(midnightNow+(24*3600*1000));
-		midnightTomorrow = midnightTomorrow.getTime();
 
-		if (midnightNow < matchTimeSeconds && midnightTomorrow > matchTimeSeconds) {
-			dateObj.isTomorrow = 1;
-		}
+	const morningYesterday = morningNow - (24*3600*1000);
+	const midnightTomorrow = midnightNow + (24*3600*1000);
+
+	if (morningNow <= matchTimeSeconds && midnightNow >= matchTimeSeconds) {
+		dateObj.isToday = 1;
+	} else if (midnightNow < matchTimeSeconds && midnightTomorrow >= matchTimeSeconds) {
+		dateObj.isTomorrow = 1;
+	} else if (morningYesterday <= matchTimeSeconds && morningNow > matchTimeSeconds) {
+		dateObj.wasYesterday = 1;
 	}
 
 	return dateObj;
