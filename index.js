@@ -110,6 +110,26 @@ const handlers = {
 		const callback = self.attributes.owlCallback.pop();
 		callback(self);
 	},
+	'GetTomorrowsMatchesIntent' : function () {
+		// need to propagate alexa through the asynch chain, cast as 'self'.
+		var self = this;
+		// the owlCallback attribute is a stack of functions used to traverse api's
+		// in order to collect the required information
+		// 1. Get timezone from zipcode
+		// 2. determine and save offset from timezone
+		// 3. Get rankings
+		// 4. determine stage from rankings save stage
+		// 5. Get schedule
+		// 6. Parse the scheudle and get what is happening tomorrow.
+		self.attributes.owlCallback = [getTomorrowsMatches,
+										getSchedule,
+										getStage,
+										getRankings,
+										offsetFromTimezone,
+										getTimezoneFromZipLatLon];
+		const callback = self.attributes.owlCallback.pop();
+		callback(self);
+	},
 	'GetTeamRecordIntent' : function () {
 		// need to propagate alexa through the asynch chain, cast as 'self'.
 		var self = this;
@@ -354,7 +374,7 @@ function getYesterdaysResults(response, self) {
 	const now = Date.now();
 
 	// quickly cycle through matches until run into yesterday morning
-	const nowCal = new Date(now);
+	const nowCal = new Date(now+rawOffset*1000);
 	const y = nowCal.getFullYear();
 	const m = nowCal.getMonth();
 	const d = nowCal.getDate();
@@ -363,7 +383,7 @@ function getYesterdaysResults(response, self) {
 	const morningTodaySec = morningToday.getTime();
 	const morningYesterdaySec = morningTodaySec - 24*3600*1000;
 
-	while(matches[0].startDateTS < morningYesterdaySec) {
+	while(matches[0].startDateTS+rawOffset*1000 < morningYesterdaySec) {
 		matches.shift();
 	}
 
@@ -551,6 +571,93 @@ function getTodaysMatches(response, self) {
 	cardContent = `${liveMatchContent}${todaysMatchesContent}`;
 
 	// emit response
+	self.response.cardRenderer(cardTitle, cardContent, cardImg);
+	self.response.speak(speechOutput);
+	self.emit(':responseReady');
+}
+
+function getTomorrowsMatches(response, self) {
+	// TODO: probably should check if resposne comes back with something like we did in other function like getNextTeamMatch
+
+	// Get what we need saved in event attributes we had picked up along the way
+	let rawOffset = self.attributes.rawOffset;
+	let stageIdx = self.attributes.stage;
+
+	const stages = response.data.stages;
+	let matches = stages[stageIdx].matches;
+
+	// sort the matches
+	matches = matches.sort(compareTimesTS);
+
+	const now = Date.now();
+
+	// quickly cycle through matches until run into yesterday morning
+	const nowCal = new Date(now+rawOffset*1000);
+	const y = nowCal.getFullYear();
+	const m = nowCal.getMonth();
+	const d = nowCal.getDate();
+
+	const midnightToday = new Date(y,m,d,23,59,59,999);
+	const midnightTodaySec = midnightToday.getTime();
+
+	while(matches[0].startDateTS+rawOffset*1000 < midnightTodaySec) {
+		matches.shift();
+	}
+
+	// check relative today if there matches was yesterday
+	let tomorrowsMatches = [];
+	let calTime = {};
+	do {
+		const match = matches[0];
+		calTime = getCalendarMatchDate(match.startDateTS, now, rawOffset*1000);
+		console.log(calTime)
+		if (calTime.isTomorrow) {
+			tomorrowsMatches.push(match);
+		}
+		matches.shift();
+	} while(calTime.isTomorrow)
+
+	// Now have the yesterdays matches, so we can parse the information
+	// initialize response content
+	let speechOutput = "";
+	const cardTitle = "Tomorrow's Games";
+	let cardContent = "";
+	const cardImg = {
+		smallImageUrl: OWL.LOGO,
+		largeImageUrl: OWL.LOGO
+	};
+
+	// no games were played yesterday. TODO: possibility when states are included to go back and fetch last results or when the next games will be.
+	if (tomorrowsMatches.length == 0) {
+		speechOutput = "There are no games scheduled tomorrow.";
+		cardContent = speechOutput;
+		// configure alexa
+		self.response.cardRenderer(cardTitle, cardContent, cardImg);
+		self.response.speak(speechOutput);
+		self.emit(':responseReady');
+	}
+
+	speechOutput = `Tomorrow`;
+	for (let i=0; i < tomorrowsMatches.length; i++) {
+		const match = tomorrowsMatches[i];
+		const team1 = match.competitors[0];
+		const team2 = match.competitors[1];
+		calTime = getCalendarMatchDate(match.startDateTS, now, rawOffset*1000);
+
+		const resultStr = `the ${team1.name} will play the ${team2.name} at ${calTime.clkStr}`;
+		cardContent = `${cardContent}${team1.name} vs. ${team2.name} @ ${calTime.clkStr}`;
+		// control flow to build a sentence.
+		if (i == 0) {
+			speechOutput = `${speechOutput} ${resultStr}.`;
+			cardContent = `${cardContent}\n`;
+		} else if (i != tomorrowsMatches.length-1) {
+			speechOutput = `${speechOutput} Then, ${resultStr}.`;
+			cardContent = `${cardContent}\n`;
+		} else {
+			speechOutput = `${speechOutput} And, ${resultStr}.`;
+		}
+	}
+	// configure alexa
 	self.response.cardRenderer(cardTitle, cardContent, cardImg);
 	self.response.speak(speechOutput);
 	self.emit(':responseReady');
