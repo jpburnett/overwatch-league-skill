@@ -184,7 +184,7 @@ const handlers = {
 		}
 		const speechOutput = this.t('HELP_MSG', team1, team2);
 		const reprompt = this.t('HELP_REPROMPT');
-		this.response.speak(speechOutput).listen('HELP_REPROMPT');
+		this.response.speak(speechOutput).listen(this.t('HELP_REPROMPT'));
 		this.emit(':responseReady');
 	},
 	'AMAZON.CancelIntent' : function() {
@@ -499,7 +499,7 @@ function getTodaysMatches(response, self) {
 	};
 	
 	if (!liveMatch.id && !todaysMatches.length) {
-		speechOutput = "There are no scheudled Overwatch League games today.";
+		speechOutput = "There are no scheduled Overwatch League games today.";
 		cardContent = speechOutput;
 
 		// configure alexa
