@@ -4,7 +4,7 @@
 const https = require("https");
 
 // set up environment
-const teamID = '4410';
+const teamID = '4525';
 const teamsURL = "https://api.overwatchleague.com/teams/";
 const url = teamsURL+teamID;
 
@@ -48,18 +48,24 @@ function nextMatch(response) {
 		let matchCompetitor = {};
 		if (liveMatch.id) {
 			scores = liveMatch.scores;
+			//We need to first find out who's who
+			const team1 = liveMatch.competitors[0];
+			const team2 = liveMatch.competitors[1];
 
-			// if tied we can just zoom on through
+			const isTeam1 = (team1.id === teamId? 1: 0);
+
+			// Are we tied
 			if (scores[0].value === scores[1].value) {
 				isTied = 1;
+				introStatus = getRandomEntry(introTied);
+				matchStatus = getRandomEntry(statusTied);
+				if (isTeam1) {
+					matchCompetitor = team2;
+				} else {
+					matchCompetitor = team1;
+				}
 			} else {
-				//else we need to find out who's who
-				const team1 = liveMatch.competitors[0];
-				const team2 = liveMatch.competitors[1];
-
-
-				const isTeam1 = (team1.id === teamId? 1: 0);
-				isWinning = 0;
+				// Are we winning or losing
 				if (isTeam1) {
 					if (scores[0].value > scores[1].value) {
 						isWinning = 1;
@@ -76,18 +82,13 @@ function nextMatch(response) {
 					scores[1] = tmp;
 				}
 			}
-
-			if (isTied) {
-				introStatus = getRandomEntry(introTied);
-				matchStatus = getRandomEntry(statusTied);
+			// set phrase status
+			if (isWinning) {
+				introStatus = getRandomEntry(introWinning);
+				matchStatus = getRandomEntry(statusWinning);
 			} else {
-				if (isWinning) {
-					introStatus = getRandomEntry(introWinning);
-					matchStatus = getRandomEntry(statusWinning);
-				} else {
-					introStatus = getRandomEntry(introLosing);
-					matchStatus = getRandomEntry(statusLosing);
-				}
+				introStatus = getRandomEntry(introLosing);
+				matchStatus = getRandomEntry(statusLosing);
 			}
 		}
 
@@ -184,13 +185,14 @@ function getCalendarMatchDate(matchTimeSeconds, nowSeconds) {
 	const dow2 = now.getDay();
 
 	// check if the game is today
-	if(dow1 === dow2) {
+	let morningNow = new Date(y, m, d, 0, 0, 0, 0);
+	morningNow.getTime();
+	let midnightNow = new Date(y, m, d, 23, 59, 59, 999);
+	midnightNow = midnightNow.getTime();
+	if (morningNow < matchTimeSeconds && midnightNow > matchTimeSeconds) {
 		dateObj.isToday = 1;
 	} else {
-	// check if it is tomorrow.
-		let midnightNow = new Date(y, m, d, 23, 59,59,999); // need to change back to 23 when on server in UTC. Constructor adds offset.
-		midnightNow = midnightNow.getTime();
-		console.log(midnightNow);
+		// check if it is tomorrow.
 		let midnightTomorrow = new Date(midnightNow+(24*3600*1000));
 		midnightTomorrow = midnightTomorrow.getTime();
 

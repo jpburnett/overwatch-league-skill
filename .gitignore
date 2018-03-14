@@ -3,6 +3,7 @@
 node_modules/
 dump/
 
+*.zip
 main.js
 *.json
 .DS_Store
