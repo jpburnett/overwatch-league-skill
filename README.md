@@ -1,4 +1,5 @@
 # overwatch-league-skill
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://raw.githubusercontent.com/jpburnett/overwatch-league-skill/master/LICENSE)
 <p align="center">
   <b>The Overwatch League Alexa Skill</b><br>
   <a href="https://www.overwatchleague.com">Overwatch League Website</a> |
