@@ -6,3 +6,5 @@ dump/
 main.js
 *.json
 .DS_Store
+
+lambda/custom/resources.js
