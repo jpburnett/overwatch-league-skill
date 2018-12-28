@@ -3,11 +3,14 @@
 // Imports and other Constants
 //////////////////////////////////////////////////////////////////////////////
 
-// Import the standard SDK module 
-const Alexa = require('alexa-sdk');
+// Import the new vs ask-sdk module 
+const Alexa = require('ask-sdk-core');
 const https = require("https");
+const i18n = require('i18next');
+const sprintf = require('i18next-sprintf-postprocessor');
+
 // Imports the file with all the messages
-const languageStrings = require('./lambda/custom/languageStrings').languageStrings;
+const languageStrings = require('./languageStrings').languageStrings;
 const appResources = require('./resources');
 
 const KEYS = appResources.API_KEYS;
@@ -15,7 +18,7 @@ const AUDIO = appResources.AUDIO;
 const TEAMS = appResources.TEAMS;
 const OWL = appResources.OWL;;
 
-const APP_ID = KEYS.APP_ID;
+const APP_ID = KEYS.APP_ID; //I dont think I need this anymore, it was done away with in v2...
 const GOOG_API = KEYS.GOOG_API;
 
 //////////////////////////////////////////////////////////////////////////////
@@ -27,13 +30,18 @@ const LaunchRequestHandler = {
         return handlerInput.requestEnvelope.request.type === 'LaunchRequest';
     },
     handle(handlerInput) {
-        // const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
+        //Figure out which intent I am in...
+        console.log("In LaunchRequestHandler");
+
+        const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
         const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
 
-        const speechOutput = this.t('WELCOME_MSG', getRandomEntry(TEAMS));
-        const entry = getRandomEntry(Object.keys(AUDIO.greetings));
+        // TODO: Continue to implement and get LaunchRequest to work
+
+        const speechOutput = requestAttributes.t('WELCOME_MSG', requestAttributes.t(getRandomEntry(Object.keys(TEAMS))));
+        const entry = requestAttributes.t(getRandomEntry(Object.keys(AUDIO.greetings)));
         const ssmlSpeech = `<audio src=\"${AUDIO.greetings[entry]}\"/> ${speechOutput} And, remember, <audio src=\"${AUDIO.moreHeros}\" />`; // can embbed the speech in the ssml since it is a short clip.
-        const repromptOutput = this.t('WELCOME_REPROMPT', getRandomEntry(TEAMS));
+        const repromptOutput = requestAttributes.t('WELCOME_REPROMPT', requestAttributes.t(getRandomEntry(Object.keys(TEAMS))));
 
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
@@ -55,6 +63,8 @@ const GetNextTeamMatchHandler = {
     handle(handlerInput) {
         const attributesManager = handlerInput.attributesManager;
         const responseBuilder = handlerInput.responseBuilder;
+
+        console.log("In GetNextTeamMatchHandler");
 
         // need to propagate alexa through the asynch chain, cast as 'self'.
         var self = this;
@@ -277,17 +287,17 @@ const GetCurrentStageHandler = {
             handlerInput.requestEnvelope.request.intent.name === 'GetCurrentStageIntent';
     },
     handle(handlerInput) {
-		// need to propagate alexa through the asynch chain, cast as 'self'.
-		var self = this;
+        // need to propagate alexa through the asynch chain, cast as 'self'.
+        var self = this;
 
-		// the owlCallback attribute is a stack of functions used to traverse api's
-		// in order to collect the required information
-		// 1. Get rankings
-		// 2. detremine stage from rankings and emit
-		self.attributes.owlCallback = [getStage, getRankings];
+        // the owlCallback attribute is a stack of functions used to traverse api's
+        // in order to collect the required information
+        // 1. Get rankings
+        // 2. detremine stage from rankings and emit
+        self.attributes.owlCallback = [getStage, getRankings];
 
-		const callback = self.attributes.owlCallback.pop();
-		callback(self);
+        const callback = self.attributes.owlCallback.pop();
+        callback(self);
     },
 };
 
@@ -375,36 +385,25 @@ const SessionEndedHandler = {
 };
 
 //////////////////////////////////////////////////////////////////////////////
-// Export LAMBDA SETUP
-//////////////////////////////////////////////////////////////////////////////
-
-const skillBuilder = Alexa.SkillBuilders.custom();
-
-exports.handler = skillBuilder
-    .addRequestHandlers(
-        LaunchRequestHandler,
-        GetNextTeamMatchHandler,
-        GetNextMatchHandler,
-        GetTodaysMatchesHandler,
-        GetYesterdaysResultsHandler,
-        GetTomorrowsMatchesHandler,
-        GetTeamRecordHandler,
-        GetStandingsHandler,
-        GetTopTeamHandler,
-        GetCurrentStageHandler,
-        HelpHandler,
-        StopHandler,
-        FallbackHandler,
-        ErrorHandler,
-        SessionEndedHandler
-    )
-    .addRequestInterceptors(LocalizationInterceptor)
-    .addErrorHandlers(ErrorHandler)
-    .lambda();
-
-//////////////////////////////////////////////////////////////////////////////
 // Intent implementation functions
 //////////////////////////////////////////////////////////////////////////////
+
+const LocalizationInterceptor = {
+    process(handlerInput) {
+        const localizationClient = i18n.use(sprintf).init({
+            lng: handlerInput.requestEnvelope.request.locale,
+            overloadTranslationOptionHandler: sprintf.overloadTranslationOptionHandler,
+            resources: languageStrings,
+            returnObjects: true
+        });
+
+        const attributes = handlerInput.attributesManager.getRequestAttributes();
+        attributes.t = function (...args) {
+            return localizationClient.t(...args);
+        };
+    },
+};
+
 function getTeamRecord(response, self) {
     if (response == '') {
         // something went wrong, OWL API returned nothing. TODO: improve this if necessary
@@ -1470,3 +1469,31 @@ const statusTied = [
     "tied with",
     "neck to neck with"
 ];
+
+//////////////////////////////////////////////////////////////////////////////
+// Export LAMBDA SETUP
+//////////////////////////////////////////////////////////////////////////////
+
+const skillBuilder = Alexa.SkillBuilders.custom();
+
+exports.handler = skillBuilder
+    .addRequestHandlers(
+        LaunchRequestHandler,
+        GetNextTeamMatchHandler,
+        GetNextMatchHandler,
+        GetTodaysMatchesHandler,
+        GetYesterdaysResultsHandler,
+        GetTomorrowsMatchesHandler,
+        GetTeamRecordHandler,
+        GetStandingsHandler,
+        GetTopTeamHandler,
+        GetCurrentStageHandler,
+        HelpHandler,
+        StopHandler,
+        FallbackHandler,
+        ErrorHandler,
+        SessionEndedHandler
+    )
+    .addErrorHandlers(ErrorHandler)
+    .addRequestInterceptors(LocalizationInterceptor)
+    .lambda();

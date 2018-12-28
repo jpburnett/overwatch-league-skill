@@ -33,7 +33,7 @@ module.exports = {
 				 record for any team. If you would like to know the current standings for every team, you can ask for all standings.\
 				 I am also able to tell you today\'s games, yesterday\'s results, and, tomorrow\'s games.',
 
-				 'HELP_REPROMPT' : 'Say help to hear this again.',
+				'HELP_REPROMPT' : 'Say help to hear this again.',
 
 				'SIMPLE_REPROMPT' : "Is there something else you would like to know?",
 				'SHUTDOWN_MSG' : 'The world could always use more heros.'
@@ -72,7 +72,7 @@ module.exports = {
 				 record for any team. If you would like to know the current standings for every team, you can ask for all standings.\
 				 I am also able to tell you today\'s games, yesterday\'s results, and, tomorrow\'s games.',
 				
-				'HELP_REPROTMT' : 'Say help to hear this again.',
+				'HELP_REPROMPT' : 'Say help to hear this again.',
 				
 				'SIMPLE_REPROMPT' : "Is there something else you would like to know?",
 				'SHUTDOWN_MSG' : 'The world could always use more heros.'
