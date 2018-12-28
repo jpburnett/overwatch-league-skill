@@ -388,22 +388,6 @@ const SessionEndedHandler = {
 // Intent implementation functions
 //////////////////////////////////////////////////////////////////////////////
 
-const LocalizationInterceptor = {
-    process(handlerInput) {
-        const localizationClient = i18n.use(sprintf).init({
-            lng: handlerInput.requestEnvelope.request.locale,
-            overloadTranslationOptionHandler: sprintf.overloadTranslationOptionHandler,
-            resources: languageStrings,
-            returnObjects: true
-        });
-
-        const attributes = handlerInput.attributesManager.getRequestAttributes();
-        attributes.t = function (...args) {
-            return localizationClient.t(...args);
-        };
-    },
-};
-
 function getTeamRecord(response, self) {
     if (response == '') {
         // something went wrong, OWL API returned nothing. TODO: improve this if necessary
@@ -1475,6 +1459,22 @@ const statusTied = [
 //////////////////////////////////////////////////////////////////////////////
 
 const skillBuilder = Alexa.SkillBuilders.custom();
+
+const LocalizationInterceptor = {
+    process(handlerInput) {
+        const localizationClient = i18n.use(sprintf).init({
+            lng: handlerInput.requestEnvelope.request.locale,
+            overloadTranslationOptionHandler: sprintf.overloadTranslationOptionHandler,
+            resources: languageStrings,
+            returnObjects: true
+        });
+
+        const attributes = handlerInput.attributesManager.getRequestAttributes();
+        attributes.t = function (...args) {
+            return localizationClient.t(...args);
+        };
+    },
+};
 
 exports.handler = skillBuilder
     .addRequestHandlers(
