@@ -1,0 +1,569 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "overwatch league",
+            "intents": [
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NoIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "GetCurrentStageIntent",
+                    "slots": [],
+                    "samples": [
+                        "What is the current overwatch league stage",
+                        "what stage is it",
+                        "what stage are we on",
+                        "tell me the current stage",
+                        "what is the current stage"
+                    ]
+                },
+                {
+                    "name": "GetNextMatchIntent",
+                    "slots": [],
+                    "samples": [
+                        "When is the next match",
+                        "When is the next game",
+                        "next match",
+                        "next game",
+                        "when the next match is",
+                        "when the next game is",
+                        "get me the next match",
+                        "tell me the next match",
+                        "get me the next game",
+                        "tell me the next game",
+                        "for the next match",
+                        "for the next match information",
+                        "for the next match time",
+                        "for the next game",
+                        "for the next game time",
+                        "for the next game information"
+                    ]
+                },
+                {
+                    "name": "GetNextTeamMatchIntent",
+                    "slots": [
+                        {
+                            "name": "Team",
+                            "type": "Teams"
+                        }
+                    ],
+                    "samples": [
+                        "when is the next {Team} game",
+                        "when do the {Team} play",
+                        "when does the {Team} play",
+                        "What time is the next {Team} game",
+                        "when do {Team} play",
+                        "When {Team} plays",
+                        "When {Team} plays next",
+                        "When the {Team} will play next",
+                        "When {Team} will play",
+                        "when the {Team} play again",
+                        "when {Team} plays again",
+                        "when the next {Team} game is",
+                        "tell me the next game for {Team}",
+                        "tell me the next {Team} game",
+                        "tell me the next {Team} match",
+                        "when the {Team} play next",
+                        "when the {Team} play",
+                        "When {Team} will play next",
+                        "for the next {Team} match",
+                        "when the {Team} plays next",
+                        "When do the {Team} play next",
+                        "When do the {Team} play next in the overwatch league"
+                    ]
+                },
+                {
+                    "name": "GetStandingsIntent",
+                    "slots": [
+                        {
+                            "name": "AMAZON.NUMBER",
+                            "type": "AMAZON.NUMBER"
+                        },
+                        {
+                            "name": "Standings",
+                            "type": "Standings"
+                        }
+                    ],
+                    "samples": [
+                        "Tell me the top {AMAZON.NUMBER} teams",
+                        "who are the top teams",
+                        "tell me the top teams",
+                        "tell me the standings",
+                        "tell me rankings",
+                        "tell me standings",
+                        "what are the rankings",
+                        "what are the standings",
+                        "what are the standings for the top {AMAZON.NUMBER} teams",
+                        "{Standings} standings",
+                        "what are the {Standings} standings",
+                        "for the {Standings} standings",
+                        "{Standings} ranking",
+                        "for the {Standings} ranking",
+                        "what are the {Standings} ranking",
+                        "{Standings} rankings",
+                        "for the {Standings} rankings",
+                        "what are the {Standings} rankings",
+                        "what are {Standings} the standings ",
+                        "what are {Standings} the rankings",
+                        "who are the top {AMAZON.NUMBER} teams",
+                        "who are the top {AMAZON.NUMBER} teams in the overwatch league",
+                        "who is the top {AMAZON.NUMBER} team",
+                        "who the top {AMAZON.NUMBER} team is",
+                        "who the top {AMAZON.NUMBER} teams are",
+                        "tell me the top {AMAZON.NUMBER} team"
+                    ]
+                },
+                {
+                    "name": "GetTeamRecordIntent",
+                    "slots": [
+                        {
+                            "name": "Team",
+                            "type": "Teams"
+                        }
+                    ],
+                    "samples": [
+                        "tell me the record for {Team}",
+                        "tell me the {Team} record",
+                        "tell me {Team} Record",
+                        "what is the {Team} record",
+                        "what is the record for {Team}",
+                        "what is the record for the {Team}",
+                        "tell me the record for the {Team}",
+                        "{Team} record",
+                        "give me the record for the {Team}",
+                        "what's the record for {Team}"
+                    ]
+                },
+                {
+                    "name": "GetTodaysMatchesIntent",
+                    "slots": [],
+                    "samples": [
+                        "what matches are played today",
+                        "who will play today",
+                        "what matches will be today",
+                        "what games will be today",
+                        "what games are played today",
+                        "what teams play today",
+                        "What are today's games",
+                        "tell me today's games",
+                        "what games are today",
+                        "get me today's games",
+                        "who plays today",
+                        "what matches are today",
+                        "who plays tonight",
+                        "what games are tonight",
+                        "tell me tonight's matches",
+                        "tell me tonight's game",
+                        "get me tonight's game",
+                        "what are tonights matches",
+                        "today's games",
+                        "today's matches",
+                        "what today's games are",
+                        "what today's matches are",
+                        "what are today's matches",
+                        "for today's games",
+                        "for today's matches"
+                    ]
+                },
+                {
+                    "name": "GetTomorrowsMatchesIntent",
+                    "slots": [],
+                    "samples": [
+                        "tell me tomorrow's match",
+                        "tell me tomorrow's game",
+                        "tell me the matches tomorrow",
+                        "tell me the games tomorrow",
+                        "tell me what matches are tomorrow",
+                        "tell me what games are tomorrow",
+                        "tell me who plays tomorrow",
+                        "tomorrows matches",
+                        "tomorrows games",
+                        "tell me what is happening tomorrow",
+                        "tell me tomorrow's matches",
+                        "tell me tomorrow's games",
+                        "what is happening tomorrow",
+                        "what games are tomorrow",
+                        "what teams play tomorrow",
+                        "who play's tomorrow",
+                        "tomorrow's matches",
+                        "tomorrow's games",
+                        "what tomorrow's games are",
+                        "what are tomorrow's games",
+                        "what are tomorrow's matches",
+                        "for tomorrow's game",
+                        "for tomorrow's matche"
+                    ]
+                },
+                {
+                    "name": "GetTopTeamIntent",
+                    "slots": [],
+                    "samples": [
+                        "Who is the top team",
+                        "Who is the number one team",
+                        "tell me the top team",
+                        "tell me the number one team",
+                        "top team",
+                        "number one team",
+                        "first place team",
+                        "first place",
+                        "who is in first place",
+                        "tell me who is in first place"
+                    ]
+                },
+                {
+                    "name": "GetYesterdaysResultsIntent",
+                    "slots": [],
+                    "samples": [
+                        "tell me the matches yesterday",
+                        "tell me the games yesterday",
+                        "tell me who played yesterday",
+                        "tell me the matches played yesteday",
+                        "tell me the games played yesterday",
+                        "what matches were yesterday",
+                        "what games were yesterday",
+                        "what teams played yesterday",
+                        "what happened yesterday",
+                        "tell me yesterday's games",
+                        "yesterday's games",
+                        "yesterday's matches",
+                        "tell me yesterday's matches",
+                        "tell me what happened yesterday",
+                        "who won yesterday",
+                        "who played yesterday",
+                        "yesterday's results",
+                        "what yesterday's results were",
+                        "what yesterday's games were",
+                        "what yesterday's matches were",
+                        "what were yesterday's game",
+                        "what were yesterday's results",
+                        "for yesterday's games",
+                        "for yesterday's matche"
+                    ]
+                },
+                {
+                    "name": "AMAZON.NavigateHomeIntent",
+                    "samples": []
+                }
+            ],
+            "types": [
+                {
+                    "name": "Standings",
+                    "values": [
+                        {
+                            "name": {
+                                "value": "All",
+                                "synonyms": [
+                                    "full",
+                                    "complete"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Teams",
+                    "values": [
+                        {
+                            "id": "7698",
+                            "name": {
+                                "value": "Atlanta Reign",
+                                "synonyms": [
+                                    "Atlanta's",
+                                    "reign",
+                                    "Reign",
+                                    "Atlanta"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "7697",
+                            "name": {
+                                "value": "Washington Justice",
+                                "synonyms": [
+                                    "Washington's",
+                                    "washington",
+                                    "Justice",
+                                    "justice",
+                                    "Justice's"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "7696",
+                            "name": {
+                                "value": "Vancouver Titans",
+                                "synonyms": [
+                                    "Vancouver's",
+                                    "Vancouver",
+                                    "titans",
+                                    "Titans"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "7695",
+                            "name": {
+                                "value": "Toronto Defiant",
+                                "synonyms": [
+                                    "Toronto",
+                                    "defiant",
+                                    "Defiant",
+                                    "Toronto's"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "7694",
+                            "name": {
+                                "value": "Paris Eternal",
+                                "synonyms": [
+                                    "Paris",
+                                    "eternal",
+                                    "Eternal",
+                                    "Paris's"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "7699",
+                            "name": {
+                                "value": "Guangzhou Charge",
+                                "synonyms": [
+                                    "Guangzhou's",
+                                    "charge",
+                                    "Charge",
+                                    "Guangzhou's"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "7693",
+                            "name": {
+                                "value": "Hangzhou Spark",
+                                "synonyms": [
+                                    "Hangzhou's",
+                                    "spark",
+                                    "Spark",
+                                    "Hangzhou"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "7692",
+                            "name": {
+                                "value": "Chengdu Hunters",
+                                "synonyms": [
+                                    "Chengdu's",
+                                    "hunters",
+                                    "Hunters",
+                                    "Chengdu"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4408",
+                            "name": {
+                                "value": "Shanghai Dragons",
+                                "synonyms": [
+                                    "Shanghai's",
+                                    "Shanghai",
+                                    "Dragons",
+                                    "dragons"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4409",
+                            "name": {
+                                "value": "Seoul Dynasty",
+                                "synonyms": [
+                                    "souls",
+                                    "Seoul's",
+                                    "Seoul",
+                                    "Dynasty",
+                                    "dynasty",
+                                    "soul",
+                                    "Soul"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4404",
+                            "name": {
+                                "value": "San Francisco Shock",
+                                "synonyms": [
+                                    "San Francisco's",
+                                    "boston's",
+                                    "San Francisco",
+                                    "Shock",
+                                    "shock",
+                                    "San Fran shock",
+                                    "shark"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4524",
+                            "name": {
+                                "value": "Philadelphia Fusion",
+                                "synonyms": [
+                                    "Philadelphia's",
+                                    "fusion's",
+                                    "Fusion",
+                                    "fusion",
+                                    "philadelphia"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4403",
+                            "name": {
+                                "value": "New York Excelsior",
+                                "synonyms": [
+                                    "excelsior's",
+                                    "New York's",
+                                    "NYXL",
+                                    "New York",
+                                    "Excelsior",
+                                    "excelsior",
+                                    "n y x l",
+                                    "n. y. x. l.",
+                                    "n. yxl",
+                                    "nyxl"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4405",
+                            "name": {
+                                "value": "Los Angeles Valiant",
+                                "synonyms": [
+                                    "valiant's",
+                                    "valiant",
+                                    "Valiant",
+                                    "l. a. valiant",
+                                    "L. A. Valiant"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4410",
+                            "name": {
+                                "value": "London Spitfire",
+                                "synonyms": [
+                                    "london's",
+                                    "spitfire's",
+                                    "London",
+                                    "Spitfire",
+                                    "spit fire",
+                                    "spitfire"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4525",
+                            "name": {
+                                "value": "Houston Outlaws",
+                                "synonyms": [
+                                    "houston's",
+                                    "Houston",
+                                    "Outlaws",
+                                    "out laws",
+                                    "outlaws"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4407",
+                            "name": {
+                                "value": "Florida Mayhem",
+                                "synonyms": [
+                                    "Florida's",
+                                    "mayhem's",
+                                    "Florida",
+                                    "Mayhem",
+                                    "mayhem"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4523",
+                            "name": {
+                                "value": "Dallas Fuel",
+                                "synonyms": [
+                                    "fuel's",
+                                    "Dallas",
+                                    "Fuel",
+                                    "fuel"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4402",
+                            "name": {
+                                "value": "Boston Uprising",
+                                "synonyms": [
+                                    "uprising's",
+                                    "boston's",
+                                    "Boston",
+                                    "Uprising",
+                                    "uprising"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "4406",
+                            "name": {
+                                "value": "Los Angeles Gladiators",
+                                "synonyms": [
+                                    "Gladiators",
+                                    "gladiators",
+                                    "l. a. gladiators",
+                                    "L. A. Gladiators"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Leagues",
+                    "values": [
+                        {
+                            "id": "79",
+                            "name": {
+                                "value": "Atlantic Division",
+                                "synonyms": [
+                                    "atlantic",
+                                    "Atlantic"
+                                ]
+                            }
+                        },
+                        {
+                            "id": "80",
+                            "name": {
+                                "value": "Pacific Division",
+                                "synonyms": [
+                                    "pacific",
+                                    "Pacific"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}

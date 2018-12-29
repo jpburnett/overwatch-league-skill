@@ -38,9 +38,9 @@ const LaunchRequestHandler = {
 
         // TODO: Continue to implement and get LaunchRequest to work
 
-        const speechOutput = requestAttributes.t('WELCOME_MSG', requestAttributes.t(getRandomEntry(Object.keys(TEAMS))));
+        const speechOutput = requestAttributes.t('WELCOME_MSG', requestAttributes.t(getRandomEntry(TEAMS)));
         const entry = requestAttributes.t(getRandomEntry(Object.keys(AUDIO.greetings)));
-        const ssmlSpeech = `<audio src=\"${AUDIO.greetings[entry]}\"/> ${speechOutput} And, remember, <audio src=\"${AUDIO.moreHeros}\" />`; // can embbed the speech in the ssml since it is a short clip.
+        const ssmlSpeech = `<audio src=\"${AUDIO.greetings[entry]}\"/> ${speechOutput} And, remember, <audio src=\"${AUDIO.moreHeros}\" />`;
         const repromptOutput = requestAttributes.t('WELCOME_REPROMPT', requestAttributes.t(getRandomEntry(Object.keys(TEAMS))));
 
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
@@ -55,19 +55,22 @@ const LaunchRequestHandler = {
 // GetNextTeamMatchHandler gets the next match for a specific team
 const GetNextTeamMatchHandler = {
     canHandle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request;
 
         return handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
             handlerInput.requestEnvelope.request.intent.name === 'GetNextTeamMatchIntent';
     },
     handle(handlerInput) {
-        const attributesManager = handlerInput.attributesManager;
-        const responseBuilder = handlerInput.responseBuilder;
+        const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
 
         console.log("In GetNextTeamMatchHandler");
 
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
+        console.log("handlerInput.requestEnvelope.request.intent is: " + JSON.stringify(handlerInput.requestEnvelope.request.intent));
+
         // need to propagate alexa through the asynch chain, cast as 'self'.
-        var self = this;
+        var self = requestAttributes;
 
         // the owlCallback attribute is a stack of functions used to traverse api's
         // in order to collect the required information.
@@ -75,29 +78,36 @@ const GetNextTeamMatchHandler = {
         // 2. determine and save offset from timezone
         // 3. Get the requested team information
         // 4. Parse team response for next match
-        self.attributes.owlCallback = [getNextTeamMatch,
+        requestAttributes.owlCallback = [getNextTeamMatch,
             getTeamById,
-            offsetFromTimezone,
-            getTimezoneFromZipLatLon];
+        ];
 
-        const callback = self.attributes.owlCallback.pop();
+        const callback = requestAttributes.owlCallback.pop();
         callback(self);
+
+        //See if putting things in session attributes works?
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
+        return self.responseBuilder
+            .speak(sessionAttributes.speakOutput)
+            .getResponse();
     },
 };
 
 // GetNextMatchHandler is the general case to get whatever match is next
 const GetNextMatchHandler = {
     canHandle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request;
 
         return handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
             handlerInput.requestEnvelope.request.intent.name === 'GetNextMatchIntent';
     },
     handle(handlerInput) {
+        console.log("In GetNextMatchHandler");
+
         const attributesManager = handlerInput.attributesManager;
         const responseBuilder = handlerInput.responseBuilder;
         // need to propagate alexa through the asynch chain, cast as 'self'.
-        var self = this;
+        var self = handlerInput;
 
         // the owlCallback attribute is a stack of functions used to traverse api's
         // in order to collect the required information
@@ -357,6 +367,7 @@ const FallbackHandler = {
     },
 };
 
+// ErrorHandler is the bringer of bad news, but we don't kill the messenger
 const ErrorHandler = {
     canHandle() {
         return true;
@@ -364,9 +375,11 @@ const ErrorHandler = {
     handle(handlerInput, error) {
         console.log(`Error handled: ${error.message}`);
 
+        const speechOutput = 'an error occurred.';
+        const errorSpeech = `<audio src=\"${AUDIO.errorSounds['mei']}\"/> ${speechOutput}`;
+
         return handlerInput.responseBuilder
-            .speak('Sorry, an error occurred.')
-            .reprompt('Sorry, an error occurred.')
+            .speak(errorSpeech)
             .getResponse();
     },
 };
@@ -798,9 +811,10 @@ function getTomorrowsMatches(response, self) {
         speechOutput = "There are no games scheduled tomorrow.";
         cardContent = speechOutput;
         // configure alexa
-        self.response.cardRenderer(cardTitle, cardContent, cardImg);
-        self.response.speak(speechOutput);
-        self.emit(':responseReady');
+        return self.responseBuilder
+            .speak(speechOutput)
+            .withStandardCard(cardTitle, cardContent, cardImg.smallImageUrl, cardImg.largeImageUrl)
+            .getResponse();
     }
 
     speechOutput = `Tomorrow`;
@@ -824,9 +838,10 @@ function getTomorrowsMatches(response, self) {
         }
     }
     // configure alexa
-    self.response.cardRenderer(cardTitle, cardContent, cardImg);
-    self.response.speak(speechOutput);
-    self.emit(':responseReady');
+    return self.responseBuilder
+        .speak(speechOutput)
+        .withStandardCard(cardTitle, cardContent, cardImg.smallImageUrl, cardImg.largeImageUrl)
+        .getResponse();
 }
 
 function getNextTeamMatch(response, self) {
@@ -835,6 +850,7 @@ function getNextTeamMatch(response, self) {
         console.log("Error, response was empty.");
         OWLErr(self);
     } else {
+        console.log("I MADE IT TO THE GETNEXTTEAMMATCH FUNCTION!!!!")
         // set variables we saved in the Alexa event attributes to use
         let team = self.attributes.team;
         let rawOffset = self.attributes.rawOffset;
@@ -951,10 +967,10 @@ function getNextTeamMatch(response, self) {
             largeImageUrl: home.logo
         };
 
-        // configure alexa
-        self.response.cardRenderer(cardTitle, cardContent, cardImg);
-        self.response.speak(speechOutput);
-        self.emit(':responseReady');
+        //Print out what speechOutput is sending out
+        console.log("Speech Output %s", speechOutput);
+        // Sesstion attributes has speechOutput in it I believe?
+        sessionAttributes.speakOutput = speechOutput;
     }
 }
 
@@ -1160,7 +1176,9 @@ function apiCall(options, callback, error, self) {
 // Get team information
 function getTeamById(self) {
     // 	After all that callback we can now finally work with OWL.
-    const teamSlot = self.event.request.intent.slots.Team;
+    console.log("Made it to getTeamById (error is in here...)");
+    //TODO: Figure out how to get handlerInput defined in here...Maybe pass that in instead of self (whatever self is?).
+    const teamSlot = handlerInput.requestEnvelope.request.intent.slots.Team;
     let resolutions = {};
     let team;
     let id;
@@ -1304,6 +1322,38 @@ function offsetFromTimezone(response, self) {
     const callback = self.attributes.owlCallback.pop();
     callback(self);
 }
+
+// TODO: See if this stuff can work later instead of google way.
+// Get timezone, launches getLatLon and getTimezone
+// function getTimezone(self) {
+//     const deviceId = self.event.context.System.device.deviceId;
+//     const accessToken = self.event.context.System.apiAccessToken
+
+//     let options = {
+//         host: 'api.amazonalexa.com',
+//         path: `/v2/devices/${deviceId}/settings/System.timeZone`,
+//         headers: { Authorization: `Bearer ${accessToken}` },
+//         method: 'GET',
+//         port: 443
+//     };
+
+//     apiCall(options, requestPermissions, self);
+// }
+
+// function offsetFromTimezone(timezone, self) {
+// 	let rawOffset = "";
+// 	if (response.timeZoneId && response.rawOffset) {
+// 		timezone = response.timeZoneId;
+// 		rawOffset = response.rawOffset;
+// 	} else {
+// 		googleErr(self);
+// 	}
+
+// 	self.attributes.rawOffset = rawOffset;
+
+// 	const callback = self.attributes.owlCallback.pop();
+// callback(self);
+// }
 
 ////////////////////////////////////////////////
 // Helper functions
