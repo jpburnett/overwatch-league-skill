@@ -268,7 +268,7 @@ const GetTopTeamHandler = {
             getRankings];
 
         const callback = requestAttributes.owlCallback.pop();
-        callback(handlerInput);
+        callback(handlerInput.attributesManager);
 
         return handlerInput.responseBuilder
             .speak(sessionAttributes.speakOutput)
@@ -1236,7 +1236,8 @@ function getTeamById(handlerInput) {
 }
 
 // Get all ranking information
-function getRankings(handlerInput) {
+function getRankings(self) {
+    console.log("In getRankings function");
     let options = {
         host: OWL.API,
         path: `/ranking`,
@@ -1244,8 +1245,10 @@ function getRankings(handlerInput) {
         port: 443
     };
 
-    const callback = handlerInput.attributes.owlCallback.pop();
-    apiCall(options, callback, OWLErr, handlerInput);
+    console.log(self);
+    // I took off pop because it said it was not defined... with it off it says callback is not a function...
+    const callback = self.owlCallback;
+    apiCall(options, callback, OWLErr, self);
 }
 
 // Get full match schedule
