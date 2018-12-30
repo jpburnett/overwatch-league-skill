@@ -67,10 +67,7 @@ const GetNextTeamMatchHandler = {
 
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
-        console.log("handlerInput.requestEnvelope.request.intent is: " + JSON.stringify(handlerInput.requestEnvelope.request.intent));
-
-        // need to propagate alexa through the asynch chain, cast as 'self'.
-        var self = requestAttributes;
+        console.log("handlerInput is: " + JSON.stringify(handlerInput));
 
         // the owlCallback attribute is a stack of functions used to traverse api's
         // in order to collect the required information.
@@ -83,12 +80,12 @@ const GetNextTeamMatchHandler = {
         ];
 
         const callback = requestAttributes.owlCallback.pop();
-        callback(self);
+        callback(handlerInput);
 
         //See if putting things in session attributes works?
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
-        return self.responseBuilder
+        return handlerInput.responseBuilder
             .speak(sessionAttributes.speakOutput)
             .getResponse();
     },
@@ -106,8 +103,6 @@ const GetNextMatchHandler = {
 
         const attributesManager = handlerInput.attributesManager;
         const responseBuilder = handlerInput.responseBuilder;
-        // need to propagate alexa through the asynch chain, cast as 'self'.
-        var self = handlerInput;
 
         // the owlCallback attribute is a stack of functions used to traverse api's
         // in order to collect the required information
@@ -117,15 +112,15 @@ const GetNextMatchHandler = {
         // 4. determine stage from rankings save stage
         // 5. Get schedule
         // 6. Parse the scheudle and get the match
-        self.attributes.owlCallback = [getNextMatch,
+        handlerInput.attributes.owlCallback = [getNextMatch,
             getSchedule,
             getStage,
             getRankings,
             offsetFromTimezone,
             getTimezoneFromZipLatLon];
 
-        const callback = self.attributes.owlCallback.pop();
-        callback(self);
+        const callback = handlerInput.attributes.owlCallback.pop();
+        callback(handlerInput);
     },
 };
 
@@ -137,11 +132,9 @@ const GetTodaysMatchesHandler = {
             handlerInput.requestEnvelope.request.intent.name === 'GetTodaysMatchesIntent';
     },
     handle(handlerInput) {
+        console.log("In GetTodaysMatchesHandler");
         const attributesManager = handlerInput.attributesManager;
         const responseBuilder = handlerInput.responseBuilder;
-
-        // need to propagate alexa through the asynch chain, cast as 'self'.
-        var self = this;
 
         // the owlCallback attribute is a stack of functions used to traverse api's
         // in order to collect the required information
@@ -151,15 +144,15 @@ const GetTodaysMatchesHandler = {
         // 4. determine stage from rankings save stage
         // 5. Get schedule
         // 6. Parse the scheudle and get tonights matches from users time.
-        self.attributes.owlCallback = [getTodaysMatches,
+        handlerInput.attributes.owlCallback = [getTodaysMatches,
             getSchedule,
             getStage,
             getRankings,
             offsetFromTimezone,
             getTimezoneFromZipLatLon];
 
-        const callback = self.attributes.owlCallback.pop();
-        callback(self);
+        const callback = handlerInput.attributes.owlCallback.pop();
+        callback(handlerInput);
     },
 };
 
@@ -171,11 +164,10 @@ const GetYesterdaysResultsHandler = {
             handlerInput.requestEnvelope.request.intent.name === 'GetYesterdaysResultsIntent';
     },
     handle(handlerInput) {
+        console.log("In GetYesterdaysResultsHandler");
         const attributesManager = handlerInput.attributesManager;
         const responseBuilder = handlerInput.responseBuilder;
 
-        // need to propagate alexa through the asynch chain, cast as 'self'.
-        var self = this;
         // the owlCallback attribute is a stack of functions used to traverse api's
         // in order to collect the required information
         // 1. Get timezone from zipcode
@@ -184,15 +176,15 @@ const GetYesterdaysResultsHandler = {
         // 4. determine stage from rankings save stage
         // 5. Get schedule
         // 6. Parse the scheudle and get what happend yesterday.
-        self.attributes.owlCallback = [getYesterdaysResults,
+        handlerInput.attributes.owlCallback = [getYesterdaysResults,
             getSchedule,
             getStage,
             getRankings,
             offsetFromTimezone,
             getTimezoneFromZipLatLon];
 
-        const callback = self.attributes.owlCallback.pop();
-        callback(self);
+        const callback = handlerInput.attributes.owlCallback.pop();
+        callback(handlerInput);
     },
 };
 
@@ -204,11 +196,10 @@ const GetTomorrowsMatchesHandler = {
             handlerInput.requestEnvelope.request.intent.name === 'GetTomorrowsMatchesIntent';
     },
     handle(handlerInput) {
+        console.log("In GetTomorrowsMatchesHandler");
         const attributesManager = handlerInput.attributesManager;
         const responseBuilder = handlerInput.responseBuilder;
 
-        // need to propagate alexa through the asynch chain, cast as 'self'.
-        var self = this;
         // the owlCallback attribute is a stack of functions used to traverse api's
         // in order to collect the required information
         // 1. Get timezone from zipcode
@@ -217,97 +208,85 @@ const GetTomorrowsMatchesHandler = {
         // 4. determine stage from rankings save stage
         // 5. Get schedule
         // 6. Parse the scheudle and get what is happening tomorrow.
-        self.attributes.owlCallback = [getTomorrowsMatches,
+        handlerInput.attributes.owlCallback = [getTomorrowsMatches,
             getSchedule,
             getStage,
             getRankings,
             offsetFromTimezone,
             getTimezoneFromZipLatLon];
-        const callback = self.attributes.owlCallback.pop();
-        callback(self);
+        const callback = handlerInput.attributes.owlCallback.pop();
+        callback(handlerInput);
     },
 };
 
 const GetTeamRecordHandler = {
     canHandle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request;
 
         return handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
             handlerInput.requestEnvelope.request.intent.name === 'GetTeamRecordIntent';
     },
     handle(handlerInput) {
+        console.log("In GetTeamRecordHandler");
         const attributesManager = handlerInput.attributesManager;
         const responseBuilder = handlerInput.responseBuilder;
 
-        // need to propagate alexa through the asynch chain, cast as 'self'.
-        var self = this;
-
-        self.attributes.owlCallback = [getTeamRecord,
+        handlerInput.attributes.owlCallback = [getTeamRecord,
             getTeamById];
 
-        const callback = self.attributes.owlCallback.pop();
-        callback(self);
+        const callback = handlerInput.attributes.owlCallback.pop();
+        callback(handlerInput);
     },
 };
 
 const GetStandingsHandler = {
     canHandle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request;
 
         return handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
             handlerInput.requestEnvelope.request.intent.name === 'GetStandingsIntent';
     },
     handle(handlerInput) {
-        // need to propagate alexa through the asynch chain, cast as 'self'.
-        var self = this;
-
-        self.attributes.owlCallback = [getTeamStandings,
+        console.log("In GetStandingsHandler");
+        handlerInput.attributes.owlCallback = [getTeamStandings,
             getRankings];
 
-        const callback = self.attributes.owlCallback.pop();
-        callback(self);
+        const callback = handlerInput.attributes.owlCallback.pop();
+        callback(handlerInput);
     },
 };
 
 const GetTopTeamHandler = {
     canHandle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request;
 
         return handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
             handlerInput.requestEnvelope.request.intent.name === 'GetTopTeamIntent';
     },
     handle(handlerInput) {
-        // need to propagate alexa through the asynch chain, cast as 'self'.
-        var self = this;
-
-
-        self.attributes.owlCallback = [getTopTeam,
+        console.log("In GetTopTeamHandler");
+        handlerInput.attributes.owlCallback = [getTopTeam,
             getRankings];
 
-        const callback = self.attributes.owlCallback.pop();
-        callback(self);
+        const callback = handlerInput.attributes.owlCallback.pop();
+        callback(handlerInput);
     },
 };
 
 const GetCurrentStageHandler = {
     canHandle(handlerInput) {
-        const request = handlerInput.requestEnvelope.request;
 
         return handlerInput.requestEnvelope.request.type === 'IntentRequest' &&
             handlerInput.requestEnvelope.request.intent.name === 'GetCurrentStageIntent';
     },
     handle(handlerInput) {
-        // need to propagate alexa through the asynch chain, cast as 'self'.
-        var self = this;
+        console.log("In GetCurrentStageHandler");
 
         // the owlCallback attribute is a stack of functions used to traverse api's
         // in order to collect the required information
         // 1. Get rankings
         // 2. detremine stage from rankings and emit
-        self.attributes.owlCallback = [getStage, getRankings];
+        handlerInput.attributes.owlCallback = [getStage, getRankings];
 
-        const callback = self.attributes.owlCallback.pop();
-        callback(self);
+        const callback = handlerInput.attributes.owlCallback.pop();
+        callback(handlerInput);
     },
 };
 
@@ -319,6 +298,7 @@ const HelpHandler = {
         return request.type === 'IntentRequest' && request.intent.name === 'AMAZON.HelpIntent';
     },
     handle(handlerInput) {
+        console.log("In HelpHandler");
         const attributesManager = handlerInput.attributesManager;
         const responseBuilder = handlerInput.responseBuilder;
 
@@ -341,6 +321,7 @@ const StopHandler = {
                 || request.intent.name === 'AMAZON.StopIntent');
     },
     handle(handlerInput) {
+        console.log("In StopHandler");
         const attributesManager = handlerInput.attributesManager;
         const responseBuilder = handlerInput.responseBuilder;
 
@@ -401,13 +382,13 @@ const SessionEndedHandler = {
 // Intent implementation functions
 //////////////////////////////////////////////////////////////////////////////
 
-function getTeamRecord(response, self) {
+function getTeamRecord(response, handlerInput) {
     if (response == '') {
         // something went wrong, OWL API returned nothing. TODO: improve this if necessary
         console.log("Error, response was empty.");
-        OWLErr(self);
+        OWLErr(handlerInput);
     } else {
-        const team = self.attributes.team;
+        const team = handlerInput.attributes.team;
         const rankings = response.ranking;
 
         const W = rankings.matchWin;
@@ -422,18 +403,19 @@ function getTeamRecord(response, self) {
         };
 
         // emit response
-        self.response.cardRenderer(cardTitle, cardContent, cardImg);
-        self.response.speak(speechOutput);
-        self.emit(':responseReady');
+        handlerInput.response.cardRenderer(cardTitle, cardContent, cardImg);
+        handlerInput.response.speak(speechOutput);
+        handlerInput.emit(':responseReady');
 
     }
 }
 
-function getTopTeam(response, self) {
+function getTopTeam(response, handlerInput) {
+    console.log("In getTopTeam function");
     if (response == '') {
         // something went wrong, OWL API returned nothing. TODO: improve this if necessary
         console.log("Error, response was empty.");
-        OWLErr(self);
+        OWLErr(handlerInput);
     } else {
         const rankings = response.content;
         const topTeam = rankings[0].competitor;
@@ -450,23 +432,30 @@ function getTopTeam(response, self) {
             largeImageUrl: topTeam.logo
         };
 
+        console.log("The Speech Out is: " + speechOutput);
+        // New responses
+        return handlerInput.responseBuilder
+            .speak(speechOutput)
+            .withStandardCard(cardTitle, cardContent, cardImg.smallImageUrl, cardImg.largeImageUrl)
+            .getResponse();
+
         // emit response
-        self.response.cardRenderer(cardTitle, cardContent, cardImg);
-        self.response.speak(speechOutput);
-        self.emit(':responseReady');
+        // handlerInput.response.cardRenderer(cardTitle, cardContent, cardImg);
+        // handlerInput.response.speak(speechOutput);
+        // handlerInput.emit(':responseReady');
     }
 }
 
-function getTeamStandings(response, self) {
+function getTeamStandings(response, handlerInput) {
     if (response == '') {
         // something went wrong, OWL API returned nothing. TODO: improve this if necessary
         console.log("Error, response was empty.");
-        OWLErr(self);
+        OWLErr(handlerInput);
     } else {
         let speechOutput = "";
         const rankings = response.content;
-        const numberSlot = self.event.request.intent.slots["AMAZON.NUMBER"];
-        const fullSlot = self.event.request.intent.slots.Standings;
+        const numberSlot = handlerInput.event.request.intent.slots["AMAZON.NUMBER"];
+        const fullSlot = handlerInput.event.request.intent.slots.Standings;
         let numTeams = 0;
 
         if (numberSlot && numberSlot.value) {
@@ -474,13 +463,13 @@ function getTeamStandings(response, self) {
             // need to handle people with a sense of humor....
             if (numTeams == 0) {
                 speechOutput = `${speechOutput}I am sorry, but asking for the top zero teams is a little silly, don\'t you think? Is there something else you would like to know?`;
-                self.response.speak(speechOutput).listen(self.t('SIMPLE_REPROMPT'));
-                self.emit(':responseReady');
+                handlerInput.response.speak(speechOutput).listen(handlerInput.t('SIMPLE_REPROMPT'));
+                handlerInput.emit(':responseReady');
             }
             if (numTeams < 0) {
                 speechOutput = `${speechOutput}Even I know that makes no sense. You need to ask for a positive number. Is there something else you would like to know?`;
-                self.response.speak(speechOutput).listen(self.t('SIMPLE_REPROMPT'));
-                self.emit(':responseReady');
+                handlerInput.response.speak(speechOutput).listen(handlerInput.t('SIMPLE_REPROMPT'));
+                handlerInput.emit(':responseReady');
             }
             if (numTeams > 12) {
                 speechOutput = `${speechOutput}I am sorry but there are only 12 teams in the league right now. I will tell you the standings for all of them.`
@@ -531,18 +520,18 @@ function getTeamStandings(response, self) {
         }
 
         // emit response
-        self.response.cardRenderer(cardTitle, cardContent, cardImg);
-        self.response.speak(speechOutput);
-        self.emit(':responseReady');
+        handlerInput.response.cardRenderer(cardTitle, cardContent, cardImg);
+        handlerInput.response.speak(speechOutput);
+        handlerInput.emit(':responseReady');
     }
 }
 
-function getYesterdaysResults(response, self) {
+function getYesterdaysResults(response, handlerInput) {
     // TODO: probably should check if resposne comes back with something like we did in other function like getNextTeamMatch
 
     // Get what we need saved in event attributes we had picked up along the way
-    let rawOffset = self.attributes.rawOffset;
-    let stageIdx = self.attributes.stage;
+    let rawOffset = handlerInput.attributes.rawOffset;
+    let stageIdx = handlerInput.attributes.stage;
 
     const stages = response.data.stages;
     let matches = stages[stageIdx].matches;
@@ -593,9 +582,9 @@ function getYesterdaysResults(response, self) {
         speechOutput = "There were no games yesterday to report on.";
         cardContent = speechOutput;
         // configure alexa
-        self.response.cardRenderer(cardTitle, cardContent, cardImg);
-        self.response.speak(speechOutput);
-        self.emit(':responseReady');
+        handlerInput.response.cardRenderer(cardTitle, cardContent, cardImg);
+        handlerInput.response.speak(speechOutput);
+        handlerInput.emit(':responseReady');
     }
 
     speechOutput = `In yesterday's ${yesterdaysMatches.length == 1 ? 'game' : 'games'}`;
@@ -628,15 +617,15 @@ function getYesterdaysResults(response, self) {
     }
 
     // configure alexa
-    self.response.cardRenderer(cardTitle, cardContent, cardImg);
-    self.response.speak(speechOutput);
-    self.emit(':responseReady');
+    handlerInput.response.cardRenderer(cardTitle, cardContent, cardImg);
+    handlerInput.response.speak(speechOutput);
+    handlerInput.emit(':responseReady');
 }
 
-function getTodaysMatches(response, self) {
+function getTodaysMatches(response, handlerInput) {
     // get what we need saved in event attributes we had picked up along the way
-    let rawOffset = self.attributes.rawOffset;
-    let stageIdx = self.attributes.stage;
+    let rawOffset = handlerInput.attributes.rawOffset;
+    let stageIdx = handlerInput.attributes.stage;
 
     const stages = response.data.stages;
     let matches = stages[stageIdx].matches;
@@ -682,9 +671,9 @@ function getTodaysMatches(response, self) {
         cardContent = speechOutput;
 
         // configure alexa
-        self.response.cardRenderer(cardTitle, cardContent, cardImg);
-        self.response.speak(speechOutput);
-        self.emit(':responseReady');
+        handlerInput.response.cardRenderer(cardTitle, cardContent, cardImg);
+        handlerInput.response.speak(speechOutput);
+        handlerInput.emit(':responseReady');
     }
 
     // if their is a live match get that information
@@ -750,17 +739,17 @@ function getTodaysMatches(response, self) {
     cardContent = `${liveMatchContent}${todaysMatchesContent}`;
 
     // emit response
-    self.response.cardRenderer(cardTitle, cardContent, cardImg);
-    self.response.speak(speechOutput);
-    self.emit(':responseReady');
+    handlerInput.response.cardRenderer(cardTitle, cardContent, cardImg);
+    handlerInput.response.speak(speechOutput);
+    handlerInput.emit(':responseReady');
 }
 
-function getTomorrowsMatches(response, self) {
+function getTomorrowsMatches(response, handlerInput) {
     // TODO: probably should check if resposne comes back with something like we did in other function like getNextTeamMatch
 
     // Get what we need saved in event attributes we had picked up along the way
-    let rawOffset = self.attributes.rawOffset;
-    let stageIdx = self.attributes.stage;
+    let rawOffset = handlerInput.attributes.rawOffset;
+    let stageIdx = handlerInput.attributes.stage;
 
     const stages = response.data.stages;
     let matches = stages[stageIdx].matches;
@@ -811,7 +800,7 @@ function getTomorrowsMatches(response, self) {
         speechOutput = "There are no games scheduled tomorrow.";
         cardContent = speechOutput;
         // configure alexa
-        return self.responseBuilder
+        return handlerInput.responseBuilder
             .speak(speechOutput)
             .withStandardCard(cardTitle, cardContent, cardImg.smallImageUrl, cardImg.largeImageUrl)
             .getResponse();
@@ -838,22 +827,23 @@ function getTomorrowsMatches(response, self) {
         }
     }
     // configure alexa
-    return self.responseBuilder
+    return handlerInput.responseBuilder
         .speak(speechOutput)
         .withStandardCard(cardTitle, cardContent, cardImg.smallImageUrl, cardImg.largeImageUrl)
         .getResponse();
 }
 
-function getNextTeamMatch(response, self) {
+function getNextTeamMatch(response, handlerInput) {
     if (response == '') {
         // something went wrong, OWL API returned nothing. TODO: improve this if necessary
         console.log("Error, response was empty.");
-        OWLErr(self);
+        OWLErr(handlerInput);
     } else {
         console.log("I MADE IT TO THE GETNEXTTEAMMATCH FUNCTION!!!!")
+        console.log(handlerInput);
         // set variables we saved in the Alexa event attributes to use
-        let team = self.attributes.team;
-        let rawOffset = self.attributes.rawOffset;
+        let team = handlerInput.attributes.team;
+        let rawOffset = handlerInput.attributes.rawOffset;
 
         // try to sort the dictionary
         let teamId = response.id;
@@ -975,10 +965,10 @@ function getNextTeamMatch(response, self) {
 }
 
 // Get ANY next OWL match expects response coming from getStage/getSchedule
-function getNextMatch(response, self) {
+function getNextMatch(response, handlerInput) {
     // get what we need saved in event attributes we had picked up along the way.
-    let rawOffset = self.attributes.rawOffset;
-    let stageIdx = self.attributes.stage; //preason=0, regular season=1-4, playoffs=5, finals=6, all-star=7.
+    let rawOffset = handlerInput.attributes.rawOffset;
+    let stageIdx = handlerInput.attributes.stage; //preason=0, regular season=1-4, playoffs=5, finals=6, all-star=7.
 
     // there is not an alexa slot needed for this intent so we just get to start to parse the api response and build the speechOutput
     const stages = response.data.stages;
@@ -1061,36 +1051,36 @@ function getNextMatch(response, self) {
     };
 
     // configure alexa
-    self.response.cardRenderer(cardTitle, cardContent, cardImg);
-    self.response.speak(speechOutput);
-    self.emit(':responseReady');
+    handlerInput.response.cardRenderer(cardTitle, cardContent, cardImg);
+    handlerInput.response.speak(speechOutput);
+    handlerInput.emit(':responseReady');
 }
 
 // Expects ranking information as the response to determine current stage. 
 // TODO: Will break after regular season? (i.e. needs to handle playoffs.)
-function getStage(response, self) {
+function getStage(response, handlerInput) {
     if (response == '') {
         // something went wrong, OWL API returned nothing.
         // TODO: improve this if necessary
         console.log("Error, response was empty.");
-        OWLErr(self);
+        OWLErr(handlerInput);
     } else {
 
         const played = response.matchesConcluded;
         const matchesPerStage = 60;
 
         // need to handle playoffs.
-        self.attributes.stage = Math.floor(played / matchesPerStage) + 1; //idx representing stage in stages array returned from /schedule endpoint. preason=0, regular season=1-4, playoffs=5, finals=6, all-star=7.
+        handlerInput.attributes.stage = Math.floor(played / matchesPerStage) + 1; //idx representing stage in stages array returned from /schedule endpoint. preason=0, regular season=1-4, playoffs=5, finals=6, all-star=7.
     }
 
-    const callback = self.attributes.owlCallback.pop();
+    const callback = handlerInput.attributes.owlCallback.pop();
     if (callback != null) {
         const options = null;
-        apiCall(options, callback, OWLErr, self);
+        apiCall(options, callback, OWLErr, handlerInput);
     } else {
         // TODO: improve alexa response if we want to.
         // prepare speech output
-        const speechOutput = `Overwatch league is currently in stage ${self.attributes.stage}.`;
+        const speechOutput = `Overwatch league is currently in stage ${handlerInput.attributes.stage}.`;
 
         // prepare card
         const cardTitle = "Current Stage";
@@ -1101,44 +1091,44 @@ function getStage(response, self) {
         };
 
         // configure alexa
-        self.response.cardRenderer(cardTitle, cardContent, cardImg);
-        self.response.speak(speechOutput);
-        self.emit(':responseReady');
+        handlerInput.response.cardRenderer(cardTitle, cardContent, cardImg);
+        handlerInput.response.speak(speechOutput);
+        handlerInput.emit(':responseReady');
     }
 }
 
-function closeWithSSMLAudio(self) {
+function closeWithSSMLAudio(handlerInput) {
     const ssmlSpeech = `Goodbye! And don't forget, <audio src=\"${AUDIO.moreHeros}\" />`;
-    self.response.speak(ssmlSpeech);
-    self.emit(':responseReady');
+    handlerInput.response.speak(ssmlSpeech);
+    handlerInput.emit(':responseReady');
 }
 
-function closeWithSpeech(self) {
-    self.emit(':tell', self.t('SHUTDOWN_MSG'));
+function closeWithSpeech(handlerInput) {
+    handlerInput.emit(':tell', handlerInput.t('SHUTDOWN_MSG'));
 }
 
-function requestPermissions(self) {
-    const permissionsWelcome = self.t('PERMISSIONS_WELCOME');
-    const permissionsPrompt = self.t('PERMISSIONS_PROMPT');
+function requestPermissions(handlerInput) {
+    const permissionsWelcome = handlerInput.t('PERMISSIONS_WELCOME');
+    const permissionsPrompt = handlerInput.t('PERMISSIONS_PROMPT');
 
     const speechOutput = `${permissionsWelcome} ${permissionsPrompt}`;
 
     const permissions = ["read::alexa:device:all:address:country_and_postal_code"];
-    self.response.askForPermissionsConsentCard(permissions);
+    handlerInput.response.askForPermissionsConsentCard(permissions);
 
-    self.response.speak(speechOutput);
+    handlerInput.response.speak(speechOutput);
 
-    self.emit(':responseReady');
+    handlerInput.emit(':responseReady');
 }
 
-function OWLErr(self) {
-    self.response.speak(self.t('OWL_API_ERR_MSG'));
-    self.emit(':responseReady');
+function OWLErr(handlerInput) {
+    handlerInput.response.speak(handlerInput.t('OWL_API_ERR_MSG'));
+    handlerInput.emit(':responseReady');
 }
 
-function googleErr(self) {
-    self.response.speak(self.t('GOOG_API_ERR_MSG'));
-    self.emit(':responseReady');
+function googleErr(handlerInput) {
+    handlerInput.response.speak(handlerInput.t('GOOG_API_ERR_MSG'));
+    handlerInput.emit(':responseReady');
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1149,16 +1139,16 @@ function googleErr(self) {
 // connecting to different APIs if necessary to gather all information. To have a funciton in
 // the stack that doesn't require a connection (i.e., when getting any next match and we get
 // stage information from rankings set options to null to pass through).
-function apiCall(options, callback, error, self) {
+function apiCall(options, callback, error, handlerInput) {
     if (options == null) {
-        callback(self);
+        callback(handlerInput);
     } else {
         https.get(options, res => {
             res.setEncoding("utf8");
 
             // don't have permissio for the api
             if (res.statusCode >= 400) {
-                return error(self);
+                return error(handlerInput);
             }
 
             let body = "";
@@ -1167,20 +1157,24 @@ function apiCall(options, callback, error, self) {
             });
             res.on("end", () => {
                 body = JSON.parse(body);
-                return callback(body, self);
+                return callback(body, handlerInput);
             });
         });
     }
 }
 
 // Get team information
-function getTeamById(self) {
+function getTeamById(handlerInput) {
     // 	After all that callback we can now finally work with OWL.
     console.log("Made it to getTeamById (error is in here...)");
-    //TODO: Figure out how to get handlerInput defined in here...Maybe pass that in instead of self (whatever self is?).
+    //TODO: Figure out how to get handlerInput defined in here...Maybe pass that in instead of handlerInput (whatever handlerInput is?).
     const teamSlot = handlerInput.requestEnvelope.request.intent.slots.Team;
+    
+    console.log(handlerInput.requestEnvelope.request.intent.slots.Team);
+    console.log("teamSlot is: " + JSON.stringify(handlerInput.requestEnvelope.request.intent.slots.Team));
+
     let resolutions = {};
-    let team;
+    let team = "";
     let id;
 
     if (teamSlot && teamSlot.resolutions) {
@@ -1193,18 +1187,18 @@ function getTeamById(self) {
             id = resolutionValues.value.id;
         } else {
             // ow error no match. TODO: Look into if this error needs to be differnet and more helpful to the user.
-            self.response.speak(self.t('INVALID_TEAM_MSG', teamSlot.value)).listen(self.t('TEAM_REPROMPT'));
-            self.emit(':responseReady');
+            handlerInput.response.speak(handlerInput.t('INVALID_TEAM_MSG', teamSlot.value)).listen(handlerInput.t('TEAM_REPROMPT'));
+            handlerInput.emit(':responseReady');
         }
 
     } else {
         //ow user spoke nothing with a synonym. TODO: Look into if this error needs to be differnet and more helpful to the user.
-        self.response.speak(self.t('INVALID_TEAM_MSG', team)).listen(self.t('TEAM_REPROMPT'));
-        self.emit(':responseReady');
+        handlerInput.response.speak(handlerInput.t('INVALID_TEAM_MSG', team)).listen(handlerInput.t('TEAM_REPROMPT'));
+        handlerInput.emit(':responseReady');
     }
 
     //TODO: not sure team is needed any more??? Because much like id we just pull it out of the response. If anything this represents the saved "spoken" team value from Alexa
-    self.attributes.team = team;
+    handlerInput.attributes.team = team;
 
     const path = `/teams/${id}`;
     let options = {
@@ -1214,12 +1208,12 @@ function getTeamById(self) {
         port: 443
     };
 
-    const callback = self.attributes.owlCallback.pop();
-    apiCall(options, callback, OWLErr, self);
+    const callback = handlerInput.attributes.owlCallback.pop();
+    apiCall(options, callback, OWLErr, handlerInput);
 }
 
 // Get all ranking information
-function getRankings(self) {
+function getRankings(handlerInput) {
     let options = {
         host: OWL.API,
         path: `/ranking`,
@@ -1227,12 +1221,12 @@ function getRankings(self) {
         port: 443
     };
 
-    const callback = self.attributes.owlCallback.pop();
-    apiCall(options, callback, OWLErr, self);
+    const callback = handlerInput.attributes.owlCallback.pop();
+    apiCall(options, callback, OWLErr, handlerInput);
 }
 
 // Get full match schedule
-function getSchedule(self) {
+function getSchedule(handlerInput) {
     let options = {
         host: OWL.API,
         path: `/schedule`,
@@ -1240,14 +1234,14 @@ function getSchedule(self) {
         port: 443
     };
 
-    const callback = self.attributes.owlCallback.pop();
-    apiCall(options, callback, OWLErr, self);
+    const callback = handlerInput.attributes.owlCallback.pop();
+    apiCall(options, callback, OWLErr, handlerInput);
 }
 
 // Get timezone, launches getLatLon and getTimezone
-function getTimezoneFromZipLatLon(self) {
-    const deviceId = self.event.context.System.device.deviceId;
-    const token = self.event.context.System.apiAccessToken;
+function getTimezoneFromZipLatLon(handlerInput) {
+    const deviceId = handlerInput.event.context.System.device.deviceId;
+    const token = handlerInput.event.context.System.apiAccessToken;
 
     let options = {
         host: 'api.amazonalexa.com',
@@ -1257,10 +1251,10 @@ function getTimezoneFromZipLatLon(self) {
         port: 443
     };
 
-    apiCall(options, getLatLon, requestPermissions, self);
+    apiCall(options, getLatLon, requestPermissions, handlerInput);
 }
 
-function getLatLon(response, self) {
+function getLatLon(response, handlerInput) {
     let countryCode = "";
     let postalCode = "";
     if (response.countryCode && response.postalCode) {
@@ -1268,7 +1262,7 @@ function getLatLon(response, self) {
         postalCode = response.postalCode;
     } else {
         //TODO: Maybe generate a better error response
-        googleErr(self);
+        googleErr(handlerInput);
     }
 
     const latLonOptions = {
@@ -1277,10 +1271,10 @@ function getLatLon(response, self) {
         method: 'GET'
     };
 
-    apiCall(latLonOptions, getTimezone, googleErr, self);
+    apiCall(latLonOptions, getTimezone, googleErr, handlerInput);
 }
 
-function getTimezone(response, self) {
+function getTimezone(response, handlerInput) {
     let city = "";
     let state = "";
     let lat = "";
@@ -1292,7 +1286,7 @@ function getTimezone(response, self) {
         lon = response.results[0].geometry.location.lng;
 
     } else {
-        googleErr(self);
+        googleErr(handlerInput);
     }
 
     const timestamp = Math.floor(Date.now() / 1000);
@@ -1303,31 +1297,31 @@ function getTimezone(response, self) {
         method: 'GET'
     };
 
-    const callback = self.attributes.owlCallback.pop();
-    apiCall(gmapstzOptions, callback, googleErr, self);
+    const callback = handlerInput.attributes.owlCallback.pop();
+    apiCall(gmapstzOptions, callback, googleErr, handlerInput);
 }
 
-function offsetFromTimezone(response, self) {
+function offsetFromTimezone(response, handlerInput) {
     let timezone = "";
     let rawOffset = "";
     if (response.timeZoneId && response.rawOffset) {
         timezone = response.timeZoneId;
         rawOffset = response.rawOffset;
     } else {
-        googleErr(self);
+        googleErr(handlerInput);
     }
 
-    self.attributes.rawOffset = rawOffset;
+    handlerInput.attributes.rawOffset = rawOffset;
 
-    const callback = self.attributes.owlCallback.pop();
-    callback(self);
+    const callback = handlerInput.attributes.owlCallback.pop();
+    callback(handlerInput);
 }
 
 // TODO: See if this stuff can work later instead of google way.
 // Get timezone, launches getLatLon and getTimezone
-// function getTimezone(self) {
-//     const deviceId = self.event.context.System.device.deviceId;
-//     const accessToken = self.event.context.System.apiAccessToken
+// function getTimezone(handlerInput) {
+//     const deviceId = handlerInput.event.context.System.device.deviceId;
+//     const accessToken = handlerInput.event.context.System.apiAccessToken
 
 //     let options = {
 //         host: 'api.amazonalexa.com',
@@ -1337,22 +1331,22 @@ function offsetFromTimezone(response, self) {
 //         port: 443
 //     };
 
-//     apiCall(options, requestPermissions, self);
+//     apiCall(options, requestPermissions, handlerInput);
 // }
 
-// function offsetFromTimezone(timezone, self) {
+// function offsetFromTimezone(timezone, handlerInput) {
 // 	let rawOffset = "";
 // 	if (response.timeZoneId && response.rawOffset) {
 // 		timezone = response.timeZoneId;
 // 		rawOffset = response.rawOffset;
 // 	} else {
-// 		googleErr(self);
+// 		googleErr(handlerInput);
 // 	}
 
-// 	self.attributes.rawOffset = rawOffset;
+// 	handlerInput.attributes.rawOffset = rawOffset;
 
-// 	const callback = self.attributes.owlCallback.pop();
-// callback(self);
+// 	const callback = handlerInput.attributes.owlCallback.pop();
+// callback(handlerInput);
 // }
 
 ////////////////////////////////////////////////
