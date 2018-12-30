@@ -41,7 +41,7 @@ const LaunchRequestHandler = {
         const speechOutput = requestAttributes.t('WELCOME_MSG', requestAttributes.t(getRandomEntry(TEAMS)));
         const entry = requestAttributes.t(getRandomEntry(Object.keys(AUDIO.greetings)));
         const ssmlSpeech = `<audio src=\"${AUDIO.greetings[entry]}\"/> ${speechOutput} And, remember, <audio src=\"${AUDIO.moreHeros}\" />`;
-        const repromptOutput = requestAttributes.t('WELCOME_REPROMPT', requestAttributes.t(getRandomEntry(Object.keys(TEAMS))));
+        const repromptOutput = requestAttributes.t('WELCOME_REPROMPT', requestAttributes.t(getRandomEntry(TEAMS)));
 
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
@@ -60,10 +60,9 @@ const GetNextTeamMatchHandler = {
             handlerInput.requestEnvelope.request.intent.name === 'GetNextTeamMatchIntent';
     },
     handle(handlerInput) {
+        console.log("In GetNextTeamMatchHandler");
         const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
         const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
-
-        console.log("In GetNextTeamMatchHandler");
 
         handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
 
@@ -82,11 +81,8 @@ const GetNextTeamMatchHandler = {
         const callback = requestAttributes.owlCallback.pop();
         callback(handlerInput);
 
-        //See if putting things in session attributes works?
-        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
-
         return handlerInput.responseBuilder
-            .speak(sessionAttributes.speakOutput)
+            .speak(handlerInput)
             .getResponse();
     },
 };
@@ -262,11 +258,21 @@ const GetTopTeamHandler = {
     },
     handle(handlerInput) {
         console.log("In GetTopTeamHandler");
-        handlerInput.attributes.owlCallback = [getTopTeam,
+
+        const requestAttributes = handlerInput.attributesManager.getRequestAttributes();
+        const sessionAttributes = handlerInput.attributesManager.getSessionAttributes();
+
+        handlerInput.attributesManager.setSessionAttributes(sessionAttributes);
+
+        requestAttributes.owlCallback = [getTopTeam,
             getRankings];
 
-        const callback = handlerInput.attributes.owlCallback.pop();
+        const callback = requestAttributes.owlCallback.pop();
         callback(handlerInput);
+
+        return handlerInput.responseBuilder
+            .speak(sessionAttributes.speakOutput)
+            .getResponse();
     },
 };
 
@@ -432,12 +438,16 @@ function getTopTeam(response, handlerInput) {
             largeImageUrl: topTeam.logo
         };
 
-        console.log("The Speech Out is: " + speechOutput);
+        //Print out what speechOutput is sending out
+        console.log("Speech Output %s", speechOutput);
+        // Sesstion attributes has speechOutput in it I believe?
+        sessionAttributes.speakOutput = speechOutput;
+
         // New responses
-        return handlerInput.responseBuilder
-            .speak(speechOutput)
-            .withStandardCard(cardTitle, cardContent, cardImg.smallImageUrl, cardImg.largeImageUrl)
-            .getResponse();
+        // return handlerInput.responseBuilder
+        //     .speak(speechOutput)
+        //     .withStandardCard(cardTitle, cardContent, cardImg.smallImageUrl, cardImg.largeImageUrl)
+        //     .getResponse();
 
         // emit response
         // handlerInput.response.cardRenderer(cardTitle, cardContent, cardImg);
@@ -1122,8 +1132,12 @@ function requestPermissions(handlerInput) {
 }
 
 function OWLErr(handlerInput) {
-    handlerInput.response.speak(handlerInput.t('OWL_API_ERR_MSG'));
-    handlerInput.emit(':responseReady');
+    //TODO: Change these things I think?
+    return handlerInput.responseBuilder
+        .speak(speechOutput)
+        .getResponse();
+    // handlerInput.response.speak(handlerInput.t('OWL_API_ERR_MSG'));
+    // handlerInput.emit(':responseReady');
 }
 
 function googleErr(handlerInput) {
@@ -1169,9 +1183,6 @@ function getTeamById(handlerInput) {
     console.log("Made it to getTeamById (error is in here...)");
     //TODO: Figure out how to get handlerInput defined in here...Maybe pass that in instead of handlerInput (whatever handlerInput is?).
     const teamSlot = handlerInput.requestEnvelope.request.intent.slots.Team;
-    
-    console.log(handlerInput.requestEnvelope.request.intent.slots.Team);
-    console.log("teamSlot is: " + JSON.stringify(handlerInput.requestEnvelope.request.intent.slots.Team));
 
     let resolutions = {};
     let team = "";
@@ -1187,18 +1198,30 @@ function getTeamById(handlerInput) {
             id = resolutionValues.value.id;
         } else {
             // ow error no match. TODO: Look into if this error needs to be differnet and more helpful to the user.
-            handlerInput.response.speak(handlerInput.t('INVALID_TEAM_MSG', teamSlot.value)).listen(handlerInput.t('TEAM_REPROMPT'));
-            handlerInput.emit(':responseReady');
+            // handlerInput.response.speak(handlerInput.t('INVALID_TEAM_MSG', teamSlot.value)).listen(handlerInput.t('TEAM_REPROMPT'));
+            // handlerInput.emit(':responseReady');
+            const speechOutput = requestAttributes.t('INVALID_TEAM_MSG', teamSlot.value);
+            const repromptSpeechOutput = requestAttributes.t('TEAM_REPROMPT');
+    
+            // Lets see if it is the response model?
+            handlerInput.responseBuilder.speak(speechOutput).reprompt(repromptSpeechOutput).getResponse();
         }
 
     } else {
         //ow user spoke nothing with a synonym. TODO: Look into if this error needs to be differnet and more helpful to the user.
-        handlerInput.response.speak(handlerInput.t('INVALID_TEAM_MSG', team)).listen(handlerInput.t('TEAM_REPROMPT'));
-        handlerInput.emit(':responseReady');
+        // handlerInput.response.speak(handlerInput.t('INVALID_TEAM_MSG', team)).listen(handlerInput.t('TEAM_REPROMPT'));
+        // handlerInput.emit(':responseReady');
+        const speechOutput = requestAttributes.t('INVALID_TEAM_MSG', team);
+        const repromptSpeechOutput = requestAttributes.t('TEAM_REPROMPT');
+
+        // Lets see if it is the response model?
+        handlerInput.responseBuilder.speak(speechOutput).reprompt(repromptSpeechOutput).getResponse();
     }
 
     //TODO: not sure team is needed any more??? Because much like id we just pull it out of the response. If anything this represents the saved "spoken" team value from Alexa
-    handlerInput.attributes.team = team;
+    // ------I want to say the error is here!----
+    // handlerInput.attributes.team = team;
+    handlerInput.responseBuilder = team;
 
     const path = `/teams/${id}`;
     let options = {
