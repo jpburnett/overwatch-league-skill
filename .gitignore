@@ -3,6 +3,8 @@
 node_modules/
 dump/
 
+lambda/py/resources.py
+
 main.js
 *.json
 .DS_Store
