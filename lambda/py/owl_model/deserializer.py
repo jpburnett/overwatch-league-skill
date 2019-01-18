@@ -104,7 +104,7 @@ if __name__=="__main__":
 
     team = sd.deserialize(json.dumps(competitors[0]['competitor']), Team)
     
-
+    print(team)
 
 
 
