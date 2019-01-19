@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import json
+import importlib
 from datetime import date, datetime
 from six import iteritems
 
@@ -37,14 +38,48 @@ class SerDeser(object):
     def __deserialize(self, payload, cls_type):
         """
         """
-        # TODO: handle more complicated model structures (e.g., a 'Team' has a
-        # list of 'Players' objects
+
         try:
-            # Check if the requested type is a string and load the requested
-            # object.
-            if cls_type in self.TYPES_MAP:
-                cls_type = self.TYPES_MAP[cls_type]
-            #TODO: else load a the str cls description from model (e.g., 'Team')
+            # nothing to do
+            if payload is None:
+                return None
+
+            # If the class type is a data structure/string load the class
+            if type(cls_type) == str:
+                if cls_type.startswith('list['):
+                    cls_collection = re.match('list\[(.*)\]').group(1)
+                    cls_collection = cls_collection.split(',')
+
+                    deser_cls_list = []
+                    for sub_payload, cls in zip(payload, cls_collection):
+                        deser_cls_list.append(self.__deserialize(
+                                                sub_payload, cls.strip()))
+                    return deser_cls_list
+
+                if cls_type.startswith('dict('):
+                    # TODO: fill should work similar to the list segment above
+                    pass
+
+                if cls_type in self.TYPES_MAP:
+                    cls_type = self.TYPES_MAP[cls_type]
+                else:
+                    # load class from name
+                    #cls_type = self.__load_class_from_name(cls_type)
+                    import_list = cls_type.rsplit('.', 1)
+
+                    # class lives in another module on the path
+                    if import_list > 1:
+                        module_name = import_list[0]
+                        cls_name = import_list[1]
+                        module = importlib.import_module(module_name, cls_name)
+
+                        cls_type = getattr(module, cls_name)
+                    # class is in the current module
+                    else:
+                        cls_name = import_list[0]
+                        cls_type = getattr(sys.modules[__name__], cls_name)
+
+            # cls_type is now a class object begin to deserialize
 
             #TODO: handle other cls_types (e.g., datetimes)
             # deserialize from a built-in ype
