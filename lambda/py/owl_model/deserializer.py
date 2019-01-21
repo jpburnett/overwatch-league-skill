@@ -2,6 +2,7 @@
 
 import json
 import importlib
+import re
 from datetime import date, datetime
 from six import iteritems
 
@@ -43,22 +44,30 @@ class SerDeser(object):
             # nothing to do
             if payload is None:
                 return None
-
             # If the class type is a data structure/string load the class
             if type(cls_type) == str:
                 if cls_type.startswith('list['):
-                    cls_collection = re.match('list\[(.*)\]').group(1)
+                    cls_collection = re.match('list\[(.*)\]', cls_type).group(1)
                     cls_collection = cls_collection.split(',')
 
                     deser_cls_list = []
-                    for sub_payload, cls in zip(payload, cls_collection):
-                        deser_cls_list.append(self.__deserialize(
-                                                sub_payload, cls.strip()))
+                    if len(cls_collection) > 1:
+                        for sub_payload, cls in zip(payload, cls_collection):
+                            deser_cls_list.append(self.__deserialize(
+                                                    sub_payload, cls.strip()))
+                    else:
+                        for sub_payload in payload:
+                            deser_cls_list.append(self.__deserialize(
+                                                    sub_payload,
+                                                    cls_collection[0].strip()))
                     return deser_cls_list
 
                 if cls_type.startswith('dict('):
-                    # TODO: fill should work similar to the list segment above
-                    pass
+                    cls_dict_type = re.match(
+                        'dict\(([^,]*), (.*)\)', cls_type).group(2)
+
+                    return { k : self.__deserialize(v, cls_dict_type)
+                                for k, v in iteritems(payload) }
 
                 if cls_type in self.TYPES_MAP:
                     cls_type = self.TYPES_MAP[cls_type]
@@ -66,13 +75,11 @@ class SerDeser(object):
                     # load class from name
                     #cls_type = self.__load_class_from_name(cls_type)
                     import_list = cls_type.rsplit('.', 1)
-
                     # class lives in another module on the path
-                    if import_list > 1:
+                    if len(import_list) > 1:
                         module_name = import_list[0]
                         cls_name = import_list[1]
                         module = importlib.import_module(module_name, cls_name)
-
                         cls_type = getattr(module, cls_name)
                     # class is in the current module
                     else:
@@ -81,11 +88,16 @@ class SerDeser(object):
 
             # cls_type is now a class object begin to deserialize
 
-            #TODO: handle other cls_types (e.g., datetimes)
             # deserialize from a built-in ype
             if cls_type in self.TYPES:
                 # TODO: handle encoding, type and value error exceptions
                 return cls_type(payload) 
+
+            #TODO: handle other cls_types (e.g., datetimes)
+            elif cls_type == datetime:
+                pass
+            elif cls_type == date:
+                pass
 
             # else deserialize from an model class
             elif hasattr(cls_type, 'cls_attr_types') and \
@@ -136,9 +148,7 @@ if __name__=="__main__":
     competitors = d['competitors']
 
     sd = SerDeser()
-
     team = sd.deserialize(json.dumps(competitors[0]['competitor']), Team)
-    
     print(team)
 
 
