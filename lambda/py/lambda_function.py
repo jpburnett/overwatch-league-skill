@@ -13,6 +13,9 @@ from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_model.ui import SimpleCard
 from ask_sdk_model import Response
 
+# Data contains all the skill speech phrases
+import data
+
 sb = SkillBuilder()
 
 logger = logging.getLogger(__name__)
