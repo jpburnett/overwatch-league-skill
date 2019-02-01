@@ -8,9 +8,12 @@ class Team(ModelObject):
     """
 
     cls_attr_types = {
-    # this seemed to be working although it said string makes  me think that the
-    # __deserialize method is more complicated than it needs because giving the
-    # wrong builtin type did not phase it.
+    # TODO: This approach seems to be working although sometimes unexpected
+    # behavior happens when passing primitive types. For example, I think I
+    # passed in 'string' instead of 'str' as a test and that wrong builtin type
+    # did not phase anything. I got the right answer but that was unexpected.
+    # This makes mer think the __deserialize method, while it does work, may be
+    # more complicated than it may need be. The todo here is to investigate this
         'id': 'str',
         'name': 'str',
         'players': 'list[owl_model.player.Player]',
@@ -18,8 +21,10 @@ class Team(ModelObject):
         'hometown': 'str',
         'country': 'str',
         'shortname': 'str',
-        'logo': 'owl_model.URL',
-        'icon': 'owl_model.URL',
+        'logo': 'str',
+        'icon': 'str',
+        'logo': 'owl_model.url.Logo',
+        'icon': 'owl_model.url.Icon',
         'colorA': 'str',
         'colorB': 'str'
     }
