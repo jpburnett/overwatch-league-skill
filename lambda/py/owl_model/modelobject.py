@@ -37,7 +37,6 @@ class ModelObject(object):
                 res[attr] = dict(map( lambda i:
                     (i[0], i[1].to_dict()) if hasattr(i[1], "to_dict") else
                     i, v.items() ))
-
             else:
                 res[attr] = v
 
@@ -48,7 +47,7 @@ class ModelObject(object):
         """
         Convert the model to have a string representation for printing
         """
-        return pprint.pformat(self.to_dict())
+        return str(self.__class__) + " " + pprint.pformat(self.to_dict())
 
 
     # TODO: pass some sort of flag to print additional parameters that are

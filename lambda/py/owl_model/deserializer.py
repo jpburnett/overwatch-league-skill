@@ -73,18 +73,7 @@ class SerDeser(object):
                     cls_type = self.TYPES_MAP[cls_type]
                 else:
                     # load class from name
-                    #cls_type = self.__load_class_from_name(cls_type)
-                    import_list = cls_type.rsplit('.', 1)
-                    # class lives in another module on the path
-                    if len(import_list) > 1:
-                        module_name = import_list[0]
-                        cls_name = import_list[1]
-                        module = importlib.import_module(module_name, cls_name)
-                        cls_type = getattr(module, cls_name)
-                    # class is in the current module
-                    else:
-                        cls_name = import_list[0]
-                        cls_type = getattr(sys.modules[__name__], cls_name)
+                    cls_type = self.__load_cls_from_name(cls_type)
 
             # cls_type is now a class object begin to deserialize
 
@@ -102,6 +91,10 @@ class SerDeser(object):
             # else deserialize from an model class
             elif hasattr(cls_type, 'cls_attr_types') and \
                     hasattr(cls_type, 'cls_attr_map'):
+                # promote payload to match object notation (i.e., want class
+                # behavior but payload is a primitive type)
+                if hasattr(cls_type, 'bootstrap_subclass'):
+                    payload = cls_type.bootstrap_subclass(payload)
 
                 attr_types = cls_type.cls_attr_types
                 attr_map = cls_type.cls_attr_map
@@ -129,6 +122,26 @@ class SerDeser(object):
             print("ERROR: " + str(e))
 
 
+    def __load_cls_from_name(self, cls_type_as_str):
+        try:
+            import_list = cls_type_as_str.rsplit('.', 1)
+            # class lives in another module on the path
+            if len(import_list) > 1:
+                module_name = import_list[0]
+                cls_name = import_list[1]
+                module = importlib.import_module(module_name, cls_name)
+                cls_type = getattr(module, cls_name)
+            # class is in the current module
+            else:
+                cls_name = import_list[0]
+                cls_type = getattr(sys.modules[__name__], cls_name)
+
+            return cls_type
+
+        except Exception as e:
+            print("Error in __load_cls_from_name method:", e)
+
+
 # Simple test case
 if __name__=="__main__":
     import requests
@@ -149,7 +162,6 @@ if __name__=="__main__":
 
     sd = SerDeser()
     team = sd.deserialize(json.dumps(competitors[0]['competitor']), Team)
-    print(team)
 
 
 
