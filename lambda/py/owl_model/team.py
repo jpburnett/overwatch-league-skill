@@ -43,7 +43,7 @@ class Team(ModelObject):
     }
 
 
-    def __init__ (self, id=None, name=None, players=None, division=str,
+    def __init__ (self, id=None, name=None, players=None, division=None,
                 hometown=None, country=None, shortname=None, logo=None,
                 icon=None, colorA=None, colorB=None):
         self.id = id
