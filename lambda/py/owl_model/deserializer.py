@@ -3,7 +3,8 @@
 import json
 import importlib
 import re
-from datetime import date, datetime
+from dateutil import parser
+from datetime import datetime
 from six import iteritems
 
 class SerDeser(object):
@@ -16,7 +17,6 @@ class SerDeser(object):
         'int': int,
         'str': str,
         'bool': bool,
-        'date': date,
         'datetime': datetime,
         'object': object
     }
@@ -82,11 +82,15 @@ class SerDeser(object):
                 # TODO: handle encoding, type and value error exceptions
                 return cls_type(payload) 
 
-            #TODO: handle other cls_types (e.g., datetimes)
             elif cls_type == datetime:
-                pass
-            elif cls_type == date:
-                pass
+                if type(payload) == str:
+                    return parser.parse(payload)
+                elif type(payload) == int:
+                    # timestamps are in miliseconds since epoch
+                    return datetime.fromtimestamp(payload/1000.0)
+                else:
+                    raise Exception()
+                    return None
 
             # else deserialize from an model class
             elif hasattr(cls_type, 'cls_attr_types') and \
@@ -112,6 +116,12 @@ class SerDeser(object):
                 for attr in add_attr:
                     setattr(model_cls, attr, payload[attr])
 
+                # TODO: at this point the model_cls is populated. Could have
+                # another method in the subclass that could further prepare the
+                # object if needed (e.g., for datetimes the timezone could be
+                # applied to adjust times). This would look like:
+                # if hasattr(cls_type, 'finialize_init'):
+                #    model_cls.finalize_init()
                 return model_cls
             # could not be further deserialized
             else:
@@ -147,21 +157,30 @@ if __name__=="__main__":
     import requests
     import sys
 
-    from team import Team
-
     owlurl = "https://api.overwatchleague.com"
     teams = "/teams"
+    schedule = "/schedule"
 
+    sd = SerDeser()
+
+    # test team
+    from team import Team
     r = requests.get(owlurl+teams)
     if r.status_code != 200:
         print("Error getting request from the OW API server...")
 
     d = json.loads(r.content)
-
     competitors = d['competitors']
 
-    sd = SerDeser()
     team = sd.deserialize(json.dumps(competitors[0]['competitor']), Team)
 
+    # test match
+    from match import Match
+    r = requests.get(owlurl+schedule)
+    if r.status_code != 200:
+        print("Error getting request from the OW API server...")
 
+    d = json.loads(r.content)
+    stages = d['data']['stages']
+    match = sd.deserialize(json.dumps(stages[0]['matches'][0]), Match)
 
