@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from modelobject import ModelObject
+from owl_model.modelobject import ModelObject
 
 class PlayerInfo(ModelObject):
     """

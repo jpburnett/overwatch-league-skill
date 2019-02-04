@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from modelobject import ModelObject
+from owl_model.modelobject import ModelObject
 
 class Match(ModelObject):
     """
@@ -10,6 +10,7 @@ class Match(ModelObject):
     cls_attr_types = {
         'id': 'str',
         'teams': 'list[owl_model.team.Team]',
+        'games': 'list[owl_model.game.Game]',
         'startdate': 'datetime',
         'enddate': 'datetime',
         'startTS': 'datetime',
@@ -19,6 +20,7 @@ class Match(ModelObject):
     cls_attr_map = {
         'id': 'id',
         'teams': 'competitors',
+        'games': 'games',
         'startdate': 'startDate',
         'enddate': 'endDate',
         'startTS': 'startDateTS',
@@ -26,19 +28,17 @@ class Match(ModelObject):
         'timezone': 'timeZone'
     }
 
-    def __init__ (self, id=None, teams=None, startdate=None, enddate=None,
-                    startTS=None, endTS=None, timezone=None):
+    def __init__ (self, id=None, teams=None, games=None, startdate=None,
+                    enddate=None, startTS=None, endTS=None, timezone=None):
         """
         """
         self.id = id
         self.teams = teams
+        self.games = games
         self.startdate = startdate
         self.enddate = enddate
         self.startTS = startTS
         self.endTS = endTS
         self.timezone = timezone
-
-
-
 
 
