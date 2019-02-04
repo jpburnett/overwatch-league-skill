@@ -48,7 +48,10 @@ class SerDeser(object):
             if type(cls_type) == str:
                 if cls_type.startswith('list['):
                     cls_collection = re.match('list\[(.*)\]', cls_type).group(1)
-                    cls_collection = cls_collection.split(',')
+                    # isntead of doing a standard .split(',') be more careful to
+                    # allow embedded objects (e.g., list[dict(...),...])
+                    cls_collection = re.findall('list\[.*\]|dict\(.*\)|[a-zA-Z][^,]*',
+                                                    cls_collection)
 
                     deser_cls_list = []
                     if len(cls_collection) > 1:
@@ -116,12 +119,9 @@ class SerDeser(object):
                 for attr in add_attr:
                     setattr(model_cls, attr, payload[attr])
 
-                # TODO: at this point the model_cls is populated. Could have
-                # another method in the subclass that could further prepare the
-                # object if needed (e.g., for datetimes the timezone could be
-                # applied to adjust times). This would look like:
-                # if hasattr(cls_type, 'finialize_init'):
-                #    model_cls.finalize_init()
+                if hasattr(cls_type, 'finalize_init'):
+                    model_cls.finalize_init()
+
                 return model_cls
             # could not be further deserialized
             else:
@@ -163,24 +163,41 @@ if __name__=="__main__":
 
     sd = SerDeser()
 
-    # test team
-    from team import Team
+    ## test team
+    #from owl_model.team import Team
+    #r = requests.get(owlurl+teams)
+    #if r.status_code != 200:
+    #    print("Error getting request from the OW API server...")
+
+    #d = json.loads(r.content)
+    #competitors = d['competitors']
+
+    #team = sd.deserialize(json.dumps(competitors[0]['competitor']), Team)
+
+    ## test a fetch on an individual team
+    #teamId = '/4523'
+    #r = requests.get(owlurl + teams + teamId)
+    #if r.status_code != 200:
+    #    print("Error getting request from the OW API server...")
+
+    #dal = sd.deserialize(r.content, Team)
+
+    ## test match
+    #from owl_model.match import Match
+    #r = requests.get(owlurl+schedule)
+    #if r.status_code != 200:
+    #    print("Error getting request from the OW API server...")
+
+    #d = json.loads(r.content)
+    #stages = d['data']['stages']
+    #match = sd.deserialize(json.dumps(stages[0]['matches'][0]), Match)
+
+    # test full teams parse
+    from owl_model.apirequest import TeamRequest
     r = requests.get(owlurl+teams)
     if r.status_code != 200:
         print("Error getting request from the OW API server...")
 
-    d = json.loads(r.content)
-    competitors = d['competitors']
+    league = sd.deserialize(r.content, TeamRequest)
 
-    team = sd.deserialize(json.dumps(competitors[0]['competitor']), Team)
-
-    # test match
-    from match import Match
-    r = requests.get(owlurl+schedule)
-    if r.status_code != 200:
-        print("Error getting request from the OW API server...")
-
-    d = json.loads(r.content)
-    stages = d['data']['stages']
-    match = sd.deserialize(json.dumps(stages[0]['matches'][0]), Match)
 
