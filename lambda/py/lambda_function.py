@@ -48,6 +48,8 @@ class GetCurrentStageIntent(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
+        logger.info("In GetCurrentStageIntent")
+
         speech_text = "Hello Python World from Classes!"
 
         handler_input.response_builder.speak(speech_text).set_card(
@@ -63,6 +65,8 @@ class GetNextMatchIntent(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
+        logger.info("In GetNextMatchIntent")
+
         speech_text = "Hello Python World from Classes!"
 
         handler_input.response_builder.speak(speech_text).set_card(
@@ -78,6 +82,8 @@ class GetNextTeamMatchIntent(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
+        logger.info("In GetNextTeamMatchIntent") #will help with figuring out errors in cloudwatch later
+
         speech_text = "Hello Python World from Classes!"
 
         handler_input.response_builder.speak(speech_text).set_card(
@@ -93,6 +99,8 @@ class GetStandingsIntent(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
+        logger.info("In GetStandingsIntent") #will help with figuring out errors in cloudwatch later
+
         speech_text = "Hello Python World from Classes!"
 
         handler_input.response_builder.speak(speech_text).set_card(
@@ -108,6 +116,8 @@ class GetTeamRecordIntent(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
+        logger.info("In GetTeamRecordIntent") #will help with figuring out errors in cloudwatch later
+
         speech_text = "Hello Python World from Classes!"
 
         handler_input.response_builder.speak(speech_text).set_card(
@@ -123,6 +133,8 @@ class GetTodaysMatchesIntent(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
+        logger.info("In GetTodaysMatchesIntent") #will help with figuring out errors in cloudwatch later
+
         speech_text = "Hello Python World from Classes!"
 
         handler_input.response_builder.speak(speech_text).set_card(
@@ -138,6 +150,8 @@ class GetTomorrowsMatchesIntent(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
+        logger.info("In GetTomorrowsMatchesIntent") #will help with figuring out errors in cloudwatch later
+
         speech_text = "Hello Python World from Classes!"
 
         handler_input.response_builder.speak(speech_text).set_card(
@@ -153,6 +167,8 @@ class GetTopTeamHandler(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
+        logger.info("In GetTopTeamHandler") #will help with figuring out errors in cloudwatch later
+
         speech_text = "Hello Python World from Classes!"
 
         handler_input.response_builder.speak(speech_text).set_card(
@@ -168,6 +184,7 @@ class GetYesterdaysResultsIntent(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
+        logger.info("In GetYesterdaysResultsIntent") #will help with figuring out errors in cloudwatch later
         speech_text = "Hello Python World from Classes!"
 
         handler_input.response_builder.speak(speech_text).set_card(
