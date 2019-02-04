@@ -8,6 +8,9 @@ class ModelObject(object):
     Base model class all other model classes inherit from
     """
 
+    def finalize_init(self):
+        pass
+
     def to_dict (self):
         """
         returns the model as a dictionary

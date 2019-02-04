@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from modelobject import ModelObject
+from owl_model.modelobject import ModelObject
 import requests
 
 # TODO: For the URL class I was considering not having subclasses because
@@ -67,10 +67,26 @@ class URL(ModelObject):
 
         return r.content
 
+class Vod(URL):
+    """
+    """
+    cls_attr_types = {
+        'path': 'str'
+    }
+    cls_attr_map = {
+        'path': 'vodLink'
+    }
+
+
+    def __init__ (self, path=None):
+        """
+        """
+        self.path = None
+
+
 class Logo(URL):
     """
     """
-
     cls_attr_types = {
         'path': 'str'
     }
@@ -81,13 +97,12 @@ class Logo(URL):
     def __init__ (self, path=None):
         """
         """
-
         self.path=path
+
 
 class Icon(URL):
     """
     """
-
     cls_attr_types = {
         'path': 'str'
     }
@@ -95,10 +110,10 @@ class Icon(URL):
         'path': 'icon'
     }
 
+
     def __init__ (self, path=None):
         """
         """
-
         self.path=path
 
  
