@@ -160,39 +160,47 @@ if __name__=="__main__":
     owlurl = "https://api.overwatchleague.com"
     teams = "/teams"
     schedule = "/schedule"
+    match = "/match"
 
     sd = SerDeser()
 
-    ## test team
-    #from owl_model.team import Team
-    #r = requests.get(owlurl+teams)
-    #if r.status_code != 200:
-    #    print("Error getting request from the OW API server...")
+    # exampl how to work with a single team from a request of all teams
+    from owl_model.team import Team
+    r = requests.get(owlurl+teams)
+    if r.status_code != 200:
+        print("Error getting request from the OW API server...")
 
-    #d = json.loads(r.content)
-    #competitors = d['competitors']
+    d = json.loads(r.content)
+    competitors = d['competitors']
 
-    #team = sd.deserialize(json.dumps(competitors[0]['competitor']), Team)
+    team = sd.deserialize(json.dumps(competitors[0]['competitor']), Team)
 
-    ## test a fetch on an individual team
-    #teamId = '/4523'
-    #r = requests.get(owlurl + teams + teamId)
-    #if r.status_code != 200:
-    #    print("Error getting request from the OW API server...")
+    # test a fetch on an individual team
+    teamId = '/4523'
+    r = requests.get(owlurl + teams + teamId)
+    if r.status_code != 200:
+        print("Error getting request from the OW API server...")
 
-    #dal = sd.deserialize(r.content, Team)
+    dal = sd.deserialize(r.content, Team)
 
-    ## test match
-    #from owl_model.match import Match
-    #r = requests.get(owlurl+schedule)
-    #if r.status_code != 200:
-    #    print("Error getting request from the OW API server...")
+    # example for how to work with a single match from a full schedule
+    from owl_model.match import Match
+    r = requests.get(owlurl+schedule)
+    if r.status_code != 200:
+        print("Error getting request from the OW API server...")
 
-    #d = json.loads(r.content)
-    #stages = d['data']['stages']
-    #match = sd.deserialize(json.dumps(stages[0]['matches'][0]), Match)
+    d = json.loads(r.content)
+    stages = d['data']['stages']
+    m = sd.deserialize(json.dumps(stages[0]['matches'][0]), Match)
 
-    # test full teams parse
+    # test a fetch on an individual match
+    r = requests.get(owlurl+match+'/21271')
+    if r.status_code != 200:
+        print("Error getting request from the OW API server...")
+
+    m2 = sd.deserialize(r.content, Match)
+
+    # Example to fetch and get full teams request parse
     from owl_model.apirequest import TeamRequest
     r = requests.get(owlurl+teams)
     if r.status_code != 200:

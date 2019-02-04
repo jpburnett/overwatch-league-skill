@@ -6,14 +6,40 @@ class Team(ModelObject):
     """
     An OWL team
     """
+    league_teams = {
+        '4523': 'Dallas Fuel',
+        '4524': 'Philadelphia Fusion',
+        '4525': 'Houston Outlaws',
+        '4402': 'Boston Uprising',
+        '4403': 'New York Excelsior',
+        '4404': 'San Francisco Shock',
+        '4405': 'Los Angeles Valiant',
+        '4406': 'Los Angeles Gladiators',
+        '4407': 'Florida Mayhem',
+        '4408': 'Shanghai Dragons',
+        '4409': 'Seoul Dynasty',
+        '4410': 'London Spitfire',
+        '7692': 'Chengdu Hunters',
+        '7693': 'Hangzhou Spark',
+        '7694': 'Paris Eternal',
+        '7695': 'Toronto Defiant',
+        '7696': 'Vancouver Titans',
+        '7697': 'Washington Justice',
+        '7698': 'Atlanta Reign',
+        '7699': 'Guangzhou Charge'
+    }
+    # TODO: build a way to alias team names. Currently the team model has a
+    # shortname attribute that is a 3 letter initial but sometimes we may like
+    # to refer to the teams by spoken shorthand name e.g., Fuel, Fusion,
+    # Uprising, etc (or at least we did before hand).
 
-    cls_attr_types = {
     # TODO: This approach seems to be working although sometimes unexpected
     # behavior happens when passing primitive types. For example, I think I
     # passed in 'string' instead of 'str' as a test and that wrong builtin type
     # did not phase anything. I got the right answer but that was unexpected.
     # This makes mer think the __deserialize method, while it does work, may be
     # more complicated than it may need be. The todo here is to investigate this
+    cls_attr_types = {
         'id': 'str',
         'name': 'str',
         'players': 'list[owl_model.player.Player]',
