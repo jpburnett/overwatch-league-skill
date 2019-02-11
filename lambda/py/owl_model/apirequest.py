@@ -5,6 +5,8 @@ from utils.deserializer import SerDeser
 from owl_model.easteregg import EasterEgg
 from owl_model.team import Team
 from owl_model.league import League
+from owl_model.schedule import Schedule
+from owl_model.match import Match
 
 # TODO: make note in different request class about the difference between making
 # requests at teams and teamsById and schedule and matchById. For example, when
@@ -22,9 +24,9 @@ class APIRequest(URL):
     endpoints = {
         'TeamsRequest': '/teams',
         'TeamByIdRequest': '/team/{}',
-        'schedule': '/schedule',
-        'matchById': '/match/{}',
-        'rankings': '/ranking'
+        'ScheduleRequest': '/schedule',
+        'MatchByIdRequest': '/match/{}',
+        'RankingsRequest': '/ranking'
     }
     
     path = None
@@ -53,7 +55,7 @@ class APIRequest(URL):
         cls.deser_cls_type = League
         return cls.__makecall()
 
-
+    # TODO: would be useful to add a factory method to fetch by name
     @classmethod
     def teamfromid(cls, teamid=None):
         if not teamid:
@@ -64,6 +66,24 @@ class APIRequest(URL):
         cls.path = cls.path.format(teamid)
         cls.deser_cls_type = Team
         return cls.__makecall()
+
+    @classmethod
+    def schedule(cls):
+        cls.path=cls.baseurl + cls.endpoints['ScheduleRequest']
+        cls.deser_cls_type = Schedule
+        return cls.__makecall()
+
+    @classmethod
+    def matchfromid(cls, matchid=None):
+        if not matchid:
+            print("ERROR: match id not provided")
+            return None
+
+        cls.path = cls.baseurl + cls.endpoints['MatchByIdRequest']
+        cls.path = cls.path.format(matchid)
+        cls.deser_cls_type = Match
+        return cls.__makecall()
+
 
 
 if __name__ == "__main__":
@@ -98,5 +118,16 @@ if __name__ == "__main__":
     # owl_model/model.py for more detail.
     print(team.schedule[0].startdate, team.schedule[0].timezone, "\n")
 
+    # Get the entire schdule for the OWL
+    schedule = APIRequest.schedule()
+
+    # Who's playing the first game of the new season in stage one week one?
+    m = schedule.stages[0].weeks[0].matches[0]
+    print("The teams opening the OWL for the 2019 season are:")
+    print(m.teams[0].name, "VS", m.teams[1].name,"\n")
+
+    # Get a particular match by ID
+    match = APIRequest.matchfromid('21271')
+
     # and remeber
-    print("The world,", APIRequest.easteregg().theWorld)
+    print("and remember: The world,", APIRequest.easteregg().theWorld)
