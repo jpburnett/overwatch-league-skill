@@ -67,6 +67,7 @@ class URL(ModelObject):
 
         return r.content
 
+
 class Vod(URL):
     """
     """

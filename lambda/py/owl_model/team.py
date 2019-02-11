@@ -72,6 +72,38 @@ class Team(ModelObject):
         'colorB': 'secondaryColor'
     }
 
+    @classmethod
+    def bootstrap_subclass(cls, data):
+        # TODO: adding a bootstrap to Team class was a surprise . I previously thought we correctly
+        # modeled the team class. But, it turns out elsewhere e.g., the /teams,
+        # and /schedule endpoint the players is a list of dictionaries matching
+        # the dictionary format below. Then in /match/id there aren't any
+        # players listed with a team.
+        # The task here would be to determine if we bootstrap like this or
+        # remove the intermediate playerinfo class everywhere else.
+        """
+
+        """
+        # handle when no players are present in team info
+        if not 'players' in data:
+            return data
+
+        players = []
+        for player in data['players']:
+            if 'team' in player.keys():
+                # already matches expected PlayerInfo structure
+                d = player
+            else:
+                # need to set up the structure
+                d = {
+                    'team': {'id': data['id'], 'type':'TEAM'},
+                    'player': player,
+                    'flags':[]
+                    }
+            players.append(d)
+        data['players'] = players
+        return data
+
 
     def __init__ (self, id=None, name=None, players=None, division=None,
                 schedule=None, ranking=None, hometown=None, country=None,

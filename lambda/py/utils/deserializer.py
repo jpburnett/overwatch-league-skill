@@ -201,11 +201,11 @@ if __name__=="__main__":
     m2 = sd.deserialize(r.content, Match)
 
     # Example to fetch and get full teams request parse
-    from owl_model.apirequest import TeamRequest
+    from owl_model.apirequest import TeamsRequest
     r = requests.get(owlurl+teams)
     if r.status_code != 200:
         print("Error getting request from the OW API server...")
 
-    league = sd.deserialize(r.content, TeamRequest)
+    league = sd.deserialize(r.content, TeamsRequest)
 
 
