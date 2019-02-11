@@ -3,6 +3,7 @@ from owl_model.url import URL
 from utils.deserializer import SerDeser
 
 from owl_model.team import Team
+from owl_model.league import League
 
 #TODO: make note in different request class about the difference between making
 # requests at teams and teamsById and schedule and matchById. For example, when
@@ -37,14 +38,11 @@ class APIRequest(URL):
         'theWorld': 'the world'
     }
 
-
-    @classmethod
-    def bootstrap_subclass(cls, data):
-        # TODO: had to override the classmethod from URL because it was messing
-        # with the deserialization. This is again something to take into
-        # consideration if we want APIRequest to inherit from URL.
-        return data
-
+    # TODO: the 'path' method was first here in the class __init__ method
+    # but I then realized that this is a chicken and the egg problem since
+    # in the deserializer the object is created. So the makeapicall class
+    # method was instead made. The todo here is determine if this is the
+    # final approach we should take
 
     @classmethod
     def makeapicall(cls):
@@ -85,11 +83,6 @@ class TeamByIdRequest(APIRequest):
     def __init__ (self):
         """
         """
-        # TODO: the 'path' method was first here in the class __init__ method
-        # but I then realized that this is a chicken and the egg problem since
-        # in the deserializer the object is created. So the makeapicall class
-        # method was instead made. The todo here is determine if this is the
-        # final approach we should take
         pass
 
 
@@ -98,47 +91,17 @@ class TeamsRequest(APIRequest):
     API request to the teams endpoing fetching all the teams in the league
     """
     cls_attr_types = {
-        # This was the implementation before addint the bootstrap_subclass
-        # method and was changed and now is commented out becasue it felt
-        # awkward compared to the rest of the model interfaces.
-        # For example to access the teams it would be
-        #  league = sd.deserialize(r.content, TeamRequest)
-        #  ...
-        #  league.leagueteams[0]['competitor'] -> this is a owl_model.team.Team
-        #'leagueteams': 'list[dict(str, owl_model.team.Team)]',
-        'leagueteams': 'list[owl_model.team.Team]',
-        'leaguedivisions': 'list[owl_model.team.Division]',
-        'logo': 'owl_model.url.Logo'
     }
     cls_attr_map = {
-        'leagueteams': 'competitors',
-        'leaguedivisions': 'owl_divisions',
-        'logo': 'logo'
     }
 
     @classmethod
-    def bootstrap_subclass(cls, data):
-        """
-        The /teams request endpoint has the usually 'competitors' key indicating
-        participating teams. However, the list contains another object before
-        matching the structure of an owl_model.team.Team because there are two
-        other keys. One being the 'division' key which is the same for all teams
-        with this call. It looks like this is a division identifying the team as
-        belonging to the game Overwatch and not a division within Overwatch.
-        So as to make this 'competitors' list look like a team we have to modify
-        list.
-        """
+    def makeapicall(cls):
+        cls.path=cls.baseurl + cls.endpoints[cls.__name__]
+        sd = SerDeser()
+        return sd.deserialize(cls.get_resource(cls), League)
 
-        teams = []
-        for team in data['competitors']:
-            teams.append(team['competitor'])
-        data['competitors'] = teams
-        return data
-
-
-    def __init__ (self, leagueteams=None, leaguedivisions=None):
+    def __init__ (self):
         """
         """
-        self.leagueteams = leagueteams
-        self.leaguedivisions = leaguedivisions
-
+        pass
