@@ -3,6 +3,7 @@
 # This is a simple Hello World Alexa Skill, built using
 # the implementation of handler classes approach in skill builder.
 import logging
+import random
 
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
@@ -16,6 +17,9 @@ from ask_sdk_model import Response
 # Data contains all the skill speech phrases
 import data
 
+# import resources for the audio lines
+import resources as resource
+
 sb = SkillBuilder()
 
 logger = logging.getLogger(__name__)
@@ -25,10 +29,10 @@ logger.setLevel(logging.INFO)
 # Helper Functions
 # =====================================================================
 # Function to grab a random roar
-def getRandomRoar(inputList):
+def getRandomGreeting(inputList):
     """Gets a random entry from a list"""
-    randomRoar = random.choice(list(inputList))
-    return inputList[randomRoar]
+    randomGreeting = random.choice(list(inputList))
+    return inputList[randomGreeting]
 
 # =====================================================================
 # Handlers
@@ -47,9 +51,9 @@ class LaunchRequestHandler(AbstractRequestHandler):
         speech_text = "Welcome to the Alexa Skills Kit, you can say hello!"
 
         # Random entry for the greetings
-        greeting = getRandomGreeting(resources.AUDIO)
+        greeting = getRandomGreeting(resource.AUDIO)
 
-        speech = '<audio src=\"' + roar + '"\/>'
+        ssmlSpeech = '<audio src=\"' + greeting + '"\/>'
 
         handler_input.response_builder.speak(speech_text).set_card(
             SimpleCard("Hello World", speech_text)).set_should_end_session(
