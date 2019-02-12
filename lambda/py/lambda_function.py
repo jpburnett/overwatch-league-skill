@@ -3,6 +3,7 @@
 # This is a simple Hello World Alexa Skill, built using
 # the implementation of handler classes approach in skill builder.
 import logging
+import random
 
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
@@ -16,11 +17,26 @@ from ask_sdk_model import Response
 # Data contains all the skill speech phrases
 import data
 
+# import resources for the audio lines
+import resources as resource
+
 sb = SkillBuilder()
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# =====================================================================
+# Helper Functions
+# =====================================================================
+# Function to grab a random roar
+def getRandomGreeting(inputList):
+    """Gets a random entry from a list"""
+    randomGreeting = random.choice(list(inputList))
+    return inputList[randomGreeting]
+
+# =====================================================================
+# Handlers
+# =====================================================================
 
 class LaunchRequestHandler(AbstractRequestHandler):
     """Handler for Skill Launch."""
@@ -33,6 +49,11 @@ class LaunchRequestHandler(AbstractRequestHandler):
         logger.info("In LaunchRequestHandler")
 
         speech_text = "Welcome to the Alexa Skills Kit, you can say hello!"
+
+        # Random entry for the greetings
+        greeting = getRandomGreeting(resource.AUDIO)
+
+        ssmlSpeech = '<audio src=\"' + greeting + '"\/>'
 
         handler_input.response_builder.speak(speech_text).set_card(
             SimpleCard("Hello World", speech_text)).set_should_end_session(
@@ -271,7 +292,22 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
 
         return handler_input.response_builder.response
 
+# Request and Response loggers
+class RequestLogger(AbstractRequestInterceptor):
+    """Log the alexa requests."""
+    def process(self, handler_input):
+        # type: (HandlerInput) -> None
+        logger.debug("Alexa Request: {}".format(
+            handler_input.request_envelope.request))
 
+
+class ResponseLogger(AbstractResponseInterceptor):
+    """Log the alexa responses."""
+    def process(self, handler_input, response):
+        # type: (HandlerInput, Response) -> None
+        logger.debug("Alexa Response: {}".format(response))
+
+# Register intent handlers for the skill builder (sb)
 sb.add_request_handler(LaunchRequestHandler())
 sb.add_request_handler(GetTopTeamHandler())
 sb.add_request_handler(HelpIntentHandler())
@@ -280,4 +316,9 @@ sb.add_request_handler(FallbackIntentHandler())
 sb.add_request_handler(SessionEndedRequestHandler())
 sb.add_exception_handler(CatchAllExceptionHandler())
 
+# TODO: Uncomment the following lines of code for request, response logs.
+sb.add_global_request_interceptor(RequestLogger())
+sb.add_global_response_interceptor(ResponseLogger())
+
+# Handler name that is used on AWS lambda
 handler = sb.lambda_handler()
