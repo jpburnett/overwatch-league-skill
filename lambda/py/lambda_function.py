@@ -13,6 +13,9 @@ from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_model.ui import SimpleCard
 from ask_sdk_model import Response
 
+# Data contains all the skill speech phrases
+import data
+
 sb = SkillBuilder()
 
 logger = logging.getLogger(__name__)
@@ -37,6 +40,125 @@ class LaunchRequestHandler(AbstractRequestHandler):
         return handler_input.response_builder.response
 
 
+class GetCurrentStageIntent(AbstractRequestHandler):
+    """Handler for getting the current stage."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("GetCurrentStageIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        logger.info("In GetCurrentStageIntent")
+
+        speech_text = "Hello Python World from Classes!"
+
+        handler_input.response_builder.speak(speech_text).set_card(
+            SimpleCard("Hello World", speech_text)).set_should_end_session(
+            True)
+        return handler_input.response_builder.response
+
+class GetNextMatchIntent(AbstractRequestHandler):
+    """Handler for getting the next match."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("GetNextMatchIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        logger.info("In GetNextMatchIntent")
+
+        speech_text = "Hello Python World from Classes!"
+
+        handler_input.response_builder.speak(speech_text).set_card(
+            SimpleCard("Hello World", speech_text)).set_should_end_session(
+            True)
+        return handler_input.response_builder.response
+
+class GetNextTeamMatchIntent(AbstractRequestHandler):
+    """Handler for getting the next team match."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("GetNextTeamMatchIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        logger.info("In GetNextTeamMatchIntent") #will help with figuring out errors in cloudwatch later
+
+        speech_text = "Hello Python World from Classes!"
+
+        handler_input.response_builder.speak(speech_text).set_card(
+            SimpleCard("Hello World", speech_text)).set_should_end_session(
+            True)
+        return handler_input.response_builder.response
+
+class GetStandingsIntent(AbstractRequestHandler):
+    """Handler for getting the standings of the OWL."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("GetStandingsIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        logger.info("In GetStandingsIntent") #will help with figuring out errors in cloudwatch later
+
+        speech_text = "Hello Python World from Classes!"
+
+        handler_input.response_builder.speak(speech_text).set_card(
+            SimpleCard("Hello World", speech_text)).set_should_end_session(
+            True)
+        return handler_input.response_builder.response
+
+class GetTeamRecordIntent(AbstractRequestHandler):
+    """Handler for getting the record of a team."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("GetTeamRecordIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        logger.info("In GetTeamRecordIntent") #will help with figuring out errors in cloudwatch later
+
+        speech_text = "Hello Python World from Classes!"
+
+        handler_input.response_builder.speak(speech_text).set_card(
+            SimpleCard("Hello World", speech_text)).set_should_end_session(
+            True)
+        return handler_input.response_builder.response
+
+class GetTodaysMatchesIntent(AbstractRequestHandler):
+    """Handler for getting matches for the day."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("GetTodaysMatchesIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        logger.info("In GetTodaysMatchesIntent") #will help with figuring out errors in cloudwatch later
+
+        speech_text = "Hello Python World from Classes!"
+
+        handler_input.response_builder.speak(speech_text).set_card(
+            SimpleCard("Hello World", speech_text)).set_should_end_session(
+            True)
+        return handler_input.response_builder.response
+
+class GetTomorrowsMatchesIntent(AbstractRequestHandler):
+    """Handler for getting matches for tomorrow."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("GetTomorrowsMatchesIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        logger.info("In GetTomorrowsMatchesIntent") #will help with figuring out errors in cloudwatch later
+
+        speech_text = "Hello Python World from Classes!"
+
+        handler_input.response_builder.speak(speech_text).set_card(
+            SimpleCard("Hello World", speech_text)).set_should_end_session(
+            True)
+        return handler_input.response_builder.response\
+
 class GetTopTeamHandler(AbstractRequestHandler):
     """Handler for getting the Top Team Intent."""
     def can_handle(self, handler_input):
@@ -45,6 +167,8 @@ class GetTopTeamHandler(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
+        logger.info("In GetTopTeamHandler") #will help with figuring out errors in cloudwatch later
+
         speech_text = "Hello Python World from Classes!"
 
         handler_input.response_builder.speak(speech_text).set_card(
@@ -52,6 +176,21 @@ class GetTopTeamHandler(AbstractRequestHandler):
             True)
         return handler_input.response_builder.response
 
+class GetYesterdaysResultsIntent(AbstractRequestHandler):
+    """Handler for getting the results of the previous days matches."""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return is_intent_name("GetYesterdaysResultsIntent")(handler_input)
+
+    def handle(self, handler_input):
+        # type: (HandlerInput) -> Response
+        logger.info("In GetYesterdaysResultsIntent") #will help with figuring out errors in cloudwatch later
+        speech_text = "Hello Python World from Classes!"
+
+        handler_input.response_builder.speak(speech_text).set_card(
+            SimpleCard("Hello World", speech_text)).set_should_end_session(
+            True)
+        return handler_input.response_builder.response
 
 class HelpIntentHandler(AbstractRequestHandler):
     """Handler for Help Intent."""
@@ -139,7 +278,6 @@ sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelOrStopIntentHandler())
 sb.add_request_handler(FallbackIntentHandler())
 sb.add_request_handler(SessionEndedRequestHandler())
-
 sb.add_exception_handler(CatchAllExceptionHandler())
 
 handler = sb.lambda_handler()
