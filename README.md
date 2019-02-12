@@ -6,7 +6,10 @@
   <a href="https://www.amazon.com/Parker-Burnett-Overwatch-League/dp/B079T6GPXD/ref=sr_1_2?s=digital-skills&ie=UTF8&qid=1519791836&sr=1-2&keywords=Overwatch+League">Link To Enable Alexa Skill</a> | 
   <a href="http://alexa.parkerburnett.com">Privacy Policy Page</a>
   <br><br>
-  <img src="https://bnetcmsus-a.akamaihd.net/cms/blog_thumbnail/xf/XFBEYMDR8ITH1512405756014.jpg">
+  <img src="https://bnetcmsus-a.akamaihd.net/cms/blog_thumbnail/sk/SK64HITB0XB41544562348016.jpg">
+  
+  <p align="center" font="32pt"> WELCOME TO SEASON 2! </p>
+  
 </p>
 
 ## What Does the Skill Do?
