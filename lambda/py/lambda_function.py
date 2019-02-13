@@ -54,7 +54,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
         speechOut = data.WELCOME_MESSAGE
 
-        ssmlSpeech = '<audio src=\"' + greeting + '"\/>' + speechOut
+        ssmlSpeech = '<audio src=\"' + greeting + '"\/> ' + speechOut
 
         handler_input.response_builder.speak(ssmlSpeech).set_card(
             SimpleCard(data.SKILL_NAME, ssmlSpeech)).ask(data.WELCOME_REPROMPT)
@@ -323,4 +323,4 @@ sb.add_global_request_interceptor(RequestLogger())
 sb.add_global_response_interceptor(ResponseLogger())
 
 # Handler name that is used on AWS lambda
-handler = sb.lambda_handler()
+lambda_handler = sb.lambda_handler()

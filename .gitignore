@@ -3,6 +3,8 @@
 node_modules/
 dump/
 
+
+skill_env/
 lambda/py/resources.py
 
 main.js
