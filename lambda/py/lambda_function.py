@@ -6,8 +6,9 @@ import logging
 import random
 
 from ask_sdk_core.skill_builder import SkillBuilder
-from ask_sdk_core.dispatch_components import AbstractRequestHandler
-from ask_sdk_core.dispatch_components import AbstractExceptionHandler
+from ask_sdk_core.dispatch_components import (
+    AbstractRequestHandler, AbstractExceptionHandler,
+    AbstractRequestInterceptor, AbstractResponseInterceptor)
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_core.handler_input import HandlerInput
 
@@ -28,11 +29,11 @@ logger.setLevel(logging.INFO)
 # =====================================================================
 # Helper Functions
 # =====================================================================
-# Function to grab a random roar
-def getRandomGreeting(inputList):
+# Function to grab a random entry from a list
+def getRandomEntry(inputList):
     """Gets a random entry from a list"""
-    randomGreeting = random.choice(list(inputList))
-    return inputList[randomGreeting]
+    randomEntry = random.choice(list(inputList))
+    return inputList[randomEntry]
 
 # =====================================================================
 # Handlers
@@ -48,16 +49,15 @@ class LaunchRequestHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> Response
         logger.info("In LaunchRequestHandler")
 
-        speech_text = "Welcome to the Alexa Skills Kit, you can say hello!"
-
         # Random entry for the greetings
-        greeting = getRandomGreeting(resource.AUDIO)
+        greeting = getRandomEntry(resource.AUDIO['greetings'])
 
-        ssmlSpeech = '<audio src=\"' + greeting + '"\/>'
+        speechOut = data.WELCOME_MESSAGE
 
-        handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Hello World", speech_text)).set_should_end_session(
-            False)
+        ssmlSpeech = '<audio src=\"' + greeting + '"\/>' + speechOut
+
+        handler_input.response_builder.speak(ssmlSpeech).set_card(
+            SimpleCard(data.SKILL_NAME, ssmlSpeech)).ask(data.WELCOME_REPROMPT)
         return handler_input.response_builder.response
 
 
@@ -288,7 +288,9 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
         logger.error(exception, exc_info=True)
 
         speech = "Sorry, there was some problem. Please try again!!"
-        handler_input.response_builder.speak(speech).ask(speech)
+        ssmlSpeech = '<audio src=\"' + resource.AUDIO['errorSounds']['mei'] + '"\/> ' + speech
+
+        handler_input.response_builder.speak(ssmlSpeech).ask(ssmlSpeech)
 
         return handler_input.response_builder.response
 

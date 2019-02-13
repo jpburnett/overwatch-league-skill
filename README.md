@@ -52,14 +52,12 @@ Overwatch League is a brand and trademark of Blizzard Entertainment. Thank you t
 
 We hope to add more features as time goes on.
 
-# Setting Up a Local Test Environment
-1. Clone the Repo.
-2. Run ```npm init``` and follow the node pacakge setup.
-3. Install the alexa-sdk dependency, ```npm install --save alexa-sdk```.
-4. Copy main.js, context.json and event.json from alexasim to the same level as your working code (index.js).
-   Note: The alexasim directory contains the minimum amount of code (barring the alexa-sdk module) needed to
-   create a local Alexa test enviorment.
-5. Modify the event.json to match the Alexa request/responses format (you can use the Alexa
-   documentation, templates from Amazon and modify them or capture json requests from an Alexa
-   simulator).
-6. Run ```node main.js```
+# When deploying code for the Alexa Skill, make sure to do the following 4 steps:
+
+1. ```pip install -r py/requirements.txt -t skill_env```
+
+2. ```cp -r py/* skill_env/```
+
+3. Zip the contents of the skill_env folder. Zip the contents of the folder and NOT the folder itself. If you zip the folder it will not work
+
+4. Upload the .ZIP file to the AWS Lambda console
