@@ -32,7 +32,7 @@ class Map(ModelObject):
         'temple-of-anubis': 'assault',
         'horizon-lunar-colony': 'assault',
         'kings-row': 'hybrid',
-        'numabni': 'hybrid',
+        'numbani': 'hybrid',
         'hollywood': 'hybrid',
         'eichenwalde': 'hybrid',
         'blizzard-world': 'hybrid',

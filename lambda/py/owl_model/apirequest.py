@@ -1,67 +1,133 @@
 
-from owl_model.modelobject import ModelObject
+from owl_model.url import URL
+from utils.deserializer import SerDeser
 
-#TODO: should this extend url? How to make this class the best it can be is
+from owl_model.easteregg import EasterEgg
+from owl_model.team import Team
+from owl_model.league import League
+from owl_model.schedule import Schedule
+from owl_model.match import Match
+
+# TODO: make note in different request class about the difference between making
+# requests at teams and teamsById and schedule and matchById. For example, when
+# making a request at schedule it includes stages infromation and the individual
+# matches do not have the list of players in the match object. But a call at the
+# matchById endpoint includes much more information. Similar thing was observed
+# for teams but need to go back and note and document that.
+
+# TODO: should this extend url? How to make this class the best it can be is
 # still a little fuzzy to me
-class APIRequest(ModelObject):
+class APIRequest(URL):
     """
     """
     baseurl = 'https://api.overwatchleague.com'
     endpoints = {
-        'teams': '/teams',
-        'teamById': '/team/%s',
-        'schedule': '/schedule',
-        'matchById': '/match/%s',
-        'rankings': '/ranking'
+        'TeamsRequest': '/teams',
+        'TeamByIdRequest': '/team/{}',
+        'ScheduleRequest': '/schedule',
+        'MatchByIdRequest': '/match/{}',
+        'RankingsRequest': '/ranking'
     }
-
-class TeamRequest(APIRequest):
-    """
-    API request to the teams endpoing fetching all the teams in the league
-    """
-    cls_attr_types = {
-        # This was the implementation before addint the bootstrap_subclass
-        # method and was changed and now is commented out becasue it felt
-        # awkward compared to the rest of the model interfaces.
-        # For example to access the teams it would be
-        #  league = sd.deserialize(r.content, TeamRequest)
-        #  ...
-        #  league.leagueteams[0]['competitor'] -> this is a owl_model.team.Team
-        #'leagueteams': 'list[dict(str, owl_model.team.Team)]',
-        'leagueteams': 'list[owl_model.team.Team]',
-        'leaguedivisions': 'list[owl_model.team.Division]',
-        'logo': 'owl_model.url.Logo'
-    }
-    cls_attr_map = {
-        'leagueteams': 'competitors',
-        'leaguedivisions': 'owl_divisions',
-        'logo': 'logo'
-    }
+    
+    path = None
+    deser_cls_type = None
+    sd = SerDeser()
 
 
     @classmethod
-    def bootstrap_subclass(cls, data):
+    def __makecall(cls):
         """
-        The /teams request endpoint has the usually 'competitors' key indicating
-        participating teams. However, the list contains another object before
-        matching the structure of an owl_model.team.Team because there are two
-        other keys. One being the 'division' key which is the same for all teams
-        with this call. It looks like this is a division identifying the team as
-        belonging to the game Overwatch and not a division within Overwatch.
-        So as to make this 'competitors' list look like a team we have to modify
-        list.
+        Make the call to the OWL API. Fetch the content and pass to the deserializer.
         """
-
-        teams = []
-        for team in data['competitors']:
-            teams.append(team['competitor'])
-        data['competitors'] = teams
-        return data
+        return cls.sd.deserialize(cls.get_resource(cls), cls.deser_cls_type)
 
 
-    def __init__ (self, leagueteams=None, leaguedivisions=None):
-        """
-        """
-        self.leagueteams = leagueteams
-        self.leaguedivisions = leaguedivisions
+    @classmethod
+    def easteregg(cls):
+        cls.path = cls.baseurl;
+        cls.deser_cls_type = EasterEgg
+        return cls.__makecall()
 
+
+    @classmethod
+    def teams(cls):
+        cls.path = cls.baseurl + cls.endpoints['TeamsRequest']
+        cls.deser_cls_type = League
+        return cls.__makecall()
+
+    # TODO: would be useful to add a factory method to fetch by name
+    @classmethod
+    def teamfromid(cls, teamid=None):
+        if not teamid:
+            print("ERROR: team id not provided")
+            return None
+
+        cls.path = cls.baseurl + cls.endpoints['TeamByIdRequest']
+        cls.path = cls.path.format(teamid)
+        cls.deser_cls_type = Team
+        return cls.__makecall()
+
+    @classmethod
+    def schedule(cls):
+        cls.path=cls.baseurl + cls.endpoints['ScheduleRequest']
+        cls.deser_cls_type = Schedule
+        return cls.__makecall()
+
+    @classmethod
+    def matchfromid(cls, matchid=None):
+        if not matchid:
+            print("ERROR: match id not provided")
+            return None
+
+        cls.path = cls.baseurl + cls.endpoints['MatchByIdRequest']
+        cls.path = cls.path.format(matchid)
+        cls.deser_cls_type = Match
+        return cls.__makecall()
+
+
+
+if __name__ == "__main__":
+
+    # Fetch the entire collections of teams in the OWL from the '/teams'
+    # endpoint
+    league = APIRequest.teams() 
+
+    # Get a specifc team by teamid (summary of team id's can be found in
+    # owl_model.league.League)
+    team = APIRequest.teamfromid('4523')
+
+    # The APIRequest classmethod are a factory constructor returning model
+    # objects from owl_model. The above call to get team with id 4523 (the
+    # Dallas Fuel) returns a owl_model.team.Team and the Team model object has
+    # several attribute to expose relevant for a team such as the players of the
+    # team or the schedule of the team.
+
+    # See owl_model.team.Team for more detail on available information. The
+    # following show some examples for how to use a Team
+
+    # show the info for the first player on the team.
+    print(team.players[0].info, "\n")
+
+    # Print all the players on the team
+    print("The players for the", team.name, "are:")
+    for player in team.players:
+        print("\t", player.info.name)
+
+    # Get the date for the first match the team has and timezone for the match.
+    # The team schedule is a list of owl_model.match.Match. See
+    # owl_model/model.py for more detail.
+    print(team.schedule[0].startdate, team.schedule[0].timezone, "\n")
+
+    # Get the entire schdule for the OWL
+    schedule = APIRequest.schedule()
+
+    # Who's playing the first game of the new season in stage one week one?
+    m = schedule.stages[0].weeks[0].matches[0]
+    print("The teams opening the OWL for the 2019 season are:")
+    print(m.teams[0].name, "VS", m.teams[1].name,"\n")
+
+    # Get a particular match by ID
+    match = APIRequest.matchfromid('21271')
+
+    # and remeber
+    print("and remember: The world,", APIRequest.easteregg().theWorld)

@@ -6,33 +6,6 @@ class Team(ModelObject):
     """
     An OWL team
     """
-    league_teams = {
-        '4523': 'Dallas Fuel',
-        '4524': 'Philadelphia Fusion',
-        '4525': 'Houston Outlaws',
-        '4402': 'Boston Uprising',
-        '4403': 'New York Excelsior',
-        '4404': 'San Francisco Shock',
-        '4405': 'Los Angeles Valiant',
-        '4406': 'Los Angeles Gladiators',
-        '4407': 'Florida Mayhem',
-        '4408': 'Shanghai Dragons',
-        '4409': 'Seoul Dynasty',
-        '4410': 'London Spitfire',
-        '7692': 'Chengdu Hunters',
-        '7693': 'Hangzhou Spark',
-        '7694': 'Paris Eternal',
-        '7695': 'Toronto Defiant',
-        '7696': 'Vancouver Titans',
-        '7697': 'Washington Justice',
-        '7698': 'Atlanta Reign',
-        '7699': 'Guangzhou Charge'
-    }
-    # TODO: build a way to alias team names. Currently the team model has a
-    # shortname attribute that is a 3 letter initial but sometimes we may like
-    # to refer to the teams by spoken shorthand name e.g., Fuel, Fusion,
-    # Uprising, etc (or at least we did before hand).
-
     # TODO: This approach seems to be working although sometimes unexpected
     # behavior happens when passing primitive types. For example, I think I
     # passed in 'string' instead of 'str' as a test and that wrong builtin type
@@ -71,6 +44,38 @@ class Team(ModelObject):
         'colorA': 'primaryColor',
         'colorB': 'secondaryColor'
     }
+
+    @classmethod
+    def bootstrap_subclass(cls, data):
+        """
+        As written now the owl_model expects a list[owl_model.player.Players]
+        and each owl_model.player.Player has a owl_model.player.PlayerInfo
+        attribute.
+        Requests to the OWL API with Team information is inconsistent in the way
+        returns Team information. It does not always match this assumption
+        (e.g., the /teams endpoint and 'players' are not even present in
+        /match/id request).
+        This bootstraps the team component to match the owl_model expectation.
+        """
+        # handle when no players are present in team info
+        if not 'players' in data:
+            return data
+        # require that players match owl_model.player.Player
+        players = []
+        for player in data['players']:
+            if 'team' in player.keys():
+                # already matches expected PlayerInfo structure
+                d = player
+            else:
+                # need to set up the structure
+                d = {
+                    'team': {'id': data['id'], 'type':'TEAM'},
+                    'player': player,
+                    'flags':[]
+                    }
+            players.append(d)
+        data['players'] = players
+        return data
 
 
     def __init__ (self, id=None, name=None, players=None, division=None,
