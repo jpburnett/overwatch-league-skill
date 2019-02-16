@@ -1,44 +1,29 @@
-# -*- coding: utf-8 -*-
 
-# This is a simple Hello World Alexa Skill, built using
-# the implementation of handler classes approach in skill builder.
-import logging
-import random
-
-from ask_sdk_core.skill_builder import SkillBuilder
-from ask_sdk_core.dispatch_components import (
-    AbstractRequestHandler, AbstractExceptionHandler,
-    AbstractRequestInterceptor, AbstractResponseInterceptor)
-from ask_sdk_core.utils import is_request_type, is_intent_name
+from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.handler_input import HandlerInput
+from ask_sdk_core.utils import is_request_type, is_intent_name
 
 from ask_sdk_model.ui import SimpleCard
-from ask_sdk_model import Response
+from ask_sdk_model.response import Response
 
 # Data contains all the skill speech phrases
-import data
+from utils import data
 
 # import resources for the audio lines
-import resources as resource
+from utils import resources as resource
 
-sb = SkillBuilder()
+# import OWL API Request interface
+from owl_model.apirequest import APIRequest
+from owl_skill.helpers import getRandomEntry
 
+import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# =====================================================================
-# Helper Functions
-# =====================================================================
-# Function to grab a random entry from a list
-def getRandomEntry(inputList):
-    """Gets a random entry from a list"""
-    randomEntry = random.choice(list(inputList))
-    return inputList[randomEntry]
 
 # =====================================================================
-# Handlers
+# Request Handlers
 # =====================================================================
-
 class LaunchRequestHandler(AbstractRequestHandler):
     """Handler for Skill Launch."""
     def can_handle(self, handler_input):
@@ -78,6 +63,7 @@ class GetCurrentStageIntent(AbstractRequestHandler):
             True)
         return handler_input.response_builder.response
 
+
 class GetNextMatchIntent(AbstractRequestHandler):
     """Handler for getting the next match."""
     def can_handle(self, handler_input):
@@ -94,6 +80,7 @@ class GetNextMatchIntent(AbstractRequestHandler):
             SimpleCard("Hello World", speech_text)).set_should_end_session(
             True)
         return handler_input.response_builder.response
+
 
 class GetNextTeamMatchIntent(AbstractRequestHandler):
     """Handler for getting the next team match."""
@@ -112,6 +99,7 @@ class GetNextTeamMatchIntent(AbstractRequestHandler):
             True)
         return handler_input.response_builder.response
 
+
 class GetStandingsIntent(AbstractRequestHandler):
     """Handler for getting the standings of the OWL."""
     def can_handle(self, handler_input):
@@ -128,6 +116,7 @@ class GetStandingsIntent(AbstractRequestHandler):
             SimpleCard("Hello World", speech_text)).set_should_end_session(
             True)
         return handler_input.response_builder.response
+
 
 class GetTeamRecordIntent(AbstractRequestHandler):
     """Handler for getting the record of a team."""
@@ -146,6 +135,7 @@ class GetTeamRecordIntent(AbstractRequestHandler):
             True)
         return handler_input.response_builder.response
 
+
 class GetTodaysMatchesIntent(AbstractRequestHandler):
     """Handler for getting matches for the day."""
     def can_handle(self, handler_input):
@@ -162,6 +152,7 @@ class GetTodaysMatchesIntent(AbstractRequestHandler):
             SimpleCard("Hello World", speech_text)).set_should_end_session(
             True)
         return handler_input.response_builder.response
+
 
 class GetTomorrowsMatchesIntent(AbstractRequestHandler):
     """Handler for getting matches for tomorrow."""
@@ -180,6 +171,7 @@ class GetTomorrowsMatchesIntent(AbstractRequestHandler):
             True)
         return handler_input.response_builder.response\
 
+
 class GetTopTeamHandler(AbstractRequestHandler):
     """Handler for getting the Top Team Intent."""
     def can_handle(self, handler_input):
@@ -197,6 +189,7 @@ class GetTopTeamHandler(AbstractRequestHandler):
             True)
         return handler_input.response_builder.response
 
+
 class GetYesterdaysResultsIntent(AbstractRequestHandler):
     """Handler for getting the results of the previous days matches."""
     def can_handle(self, handler_input):
@@ -212,6 +205,7 @@ class GetYesterdaysResultsIntent(AbstractRequestHandler):
             SimpleCard("Hello World", speech_text)).set_should_end_session(
             True)
         return handler_input.response_builder.response
+
 
 class HelpIntentHandler(AbstractRequestHandler):
     """Handler for Help Intent."""
@@ -275,52 +269,4 @@ class SessionEndedRequestHandler(AbstractRequestHandler):
         return handler_input.response_builder.response
 
 
-class CatchAllExceptionHandler(AbstractExceptionHandler):
-    """Catch all exception handler, log exception and
-    respond with custom message.
-    """
-    def can_handle(self, handler_input, exception):
-        # type: (HandlerInput, Exception) -> bool
-        return True
 
-    def handle(self, handler_input, exception):
-        # type: (HandlerInput, Exception) -> Response
-        logger.error(exception, exc_info=True)
-
-        speech = "Sorry, there was some problem. Please try again!!"
-        ssmlSpeech = '<audio src=\"' + resource.AUDIO['errorSounds']['mei'] + '"\/> ' + speech
-
-        handler_input.response_builder.speak(ssmlSpeech).ask(ssmlSpeech)
-
-        return handler_input.response_builder.response
-
-# Request and Response loggers
-class RequestLogger(AbstractRequestInterceptor):
-    """Log the alexa requests."""
-    def process(self, handler_input):
-        # type: (HandlerInput) -> None
-        logger.debug("Alexa Request: {}".format(
-            handler_input.request_envelope.request))
-
-
-class ResponseLogger(AbstractResponseInterceptor):
-    """Log the alexa responses."""
-    def process(self, handler_input, response):
-        # type: (HandlerInput, Response) -> None
-        logger.debug("Alexa Response: {}".format(response))
-
-# Register intent handlers for the skill builder (sb)
-sb.add_request_handler(LaunchRequestHandler())
-sb.add_request_handler(GetTopTeamHandler())
-sb.add_request_handler(HelpIntentHandler())
-sb.add_request_handler(CancelOrStopIntentHandler())
-sb.add_request_handler(FallbackIntentHandler())
-sb.add_request_handler(SessionEndedRequestHandler())
-sb.add_exception_handler(CatchAllExceptionHandler())
-
-# TODO: Uncomment the following lines of code for request, response logs.
-sb.add_global_request_interceptor(RequestLogger())
-sb.add_global_response_interceptor(ResponseLogger())
-
-# Handler name that is used on AWS lambda
-lambda_handler = sb.lambda_handler()
