@@ -7,6 +7,7 @@ from owl_model.team import Team
 from owl_model.league import League
 from owl_model.schedule import Schedule
 from owl_model.match import Match
+from owl_model.rankings import Rankings
 
 # TODO: make note in different request class about the difference between making
 # requests at teams and teamsById and schedule and matchById. For example, when
@@ -82,6 +83,13 @@ class APIRequest(URL):
         cls.path = cls.baseurl + cls.endpoints['MatchByIdRequest']
         cls.path = cls.path.format(matchid)
         cls.deser_cls_type = Match
+        return cls.__makecall()
+
+    # Class method to get the rankings call. 
+    @classmethod
+    def rankings(cls):
+        cls.path = cls.baseurl + cls.endpoints['RankingsRequest']
+        cls.deser_cls_type = Rankings
         return cls.__makecall()
 
 
