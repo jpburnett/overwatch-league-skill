@@ -2,15 +2,33 @@
 from datetime import datetime as dt
 import random
 
+vs = [
+    "face",
+    "showdown with",
+    "compete with",
+    "play against",
+    "compete against",
+    "contend with",
+    "rival",
+    "go head to head with",
+    "challenge",
+    "take on",
+    "battle",
+    "throw down with",
+    "clash with"
+]
+
 # =====================================================================
 # Helper Functions
 # =====================================================================
 def getRandomEntry(inputList):
     """Gets a random entry from a list"""
-    randomEntry = random.choice(list(inputList))
-    return inputList[randomEntry]
+    return random.choice(inputList)
 
-
+class clkfrmt():
+    datetimestr ='%A %B %d at %I:%M %p'
+    clkstr = '%I:%M %p'
+ 
 # TODO: wondering if this is the best way to make/store this comparison. There
 # probably is a more efficient way to go about doing this
 def isToday(matchTime):

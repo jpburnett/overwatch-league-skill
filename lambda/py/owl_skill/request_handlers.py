@@ -3,7 +3,8 @@ from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_core.utils import is_request_type, is_intent_name
 
-from ask_sdk_model.ui import SimpleCard
+from ask_sdk_model.ui import StandardCard, SimpleCard
+from ask_sdk_model.ui.image import Image
 from ask_sdk_model.response import Response
 
 # Data contains all the skill speech phrases
@@ -14,7 +15,7 @@ from utils import resources as resource
 
 # import OWL API Request interface
 from owl_model.apirequest import APIRequest
-from owl_skill.helpers import getRandomEntry
+from owl_skill.helpers import *
 
 import logging
 logger = logging.getLogger(__name__)
@@ -35,7 +36,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
         logger.info("In LaunchRequestHandler")
 
         # Random entry for the greetings
-        greeting = getRandomEntry(resource.AUDIO['greetings'])
+        greeting = getRandomEntry(list(resource.AUDIO['greetings'].values()))
 
         speechOut = data.WELCOME_MESSAGE
 
@@ -59,37 +60,43 @@ class GetNextMatchIntent(AbstractRequestHandler):
         schedule = APIRequest.schedule()
 
         curWeek = getCurrentWeek(schedule)
-        nextMatch = getNextMatch(this_week)
+        nextMatch = getNextMatch(curWeek)
 
         team1 = nextMatch.teams[0]
         team2 = nextMatch.teams[1]
 
-        # TODO: finish translating function (get all the time information
-        # required for the formatted text using isToday, wasYesterday,
-        # isTomorrow functions in the helpers)
+        # TODO: old version implemented a check for live games here. It is
+        # probably a good idea to check for a live game (the user may be
+        # interested to know) but the TODO is to consider if here is the best
+        # place to do that.
+        liveMatchContent = ""
+
+        # Prepare speech output
         nextMatchContent = "The next match will be"
-        if calTime.isToday:
+        if isToday(nextMatch.startTS):
             nextMatchContent = "{} today at {}.".format(nextMatchContent,
-                                                    calTime.clkStr)
-        elif calTime.isTomorrow:
+                                                    nextMatch.startTS.strftime(clkfrmt.clkstr))
+        elif isTomorrow(nextMatch.startTS):
             nextMatchContent = "{} tomorrow at {}.".format(nextMatchContent,
-                                                        calTime.clkStr)
+                                                    nextMatch.startTS.strftime(clkfrmt.clkstr))
         else:
-            nextMatchContent = "{} on {} {} {} at {}.".format(nextMatchContent,
-                                                        calTime.dow,
-                                                        calTime.month,
-                                                        calTime.date,
-                                                        calTime.clkStr)
+            nextMatchContent = "{} on {}.".format(nextMatchContent,
+                                             nextMatch.startTS.strftime(clkfrmt.datetimestr))
 
         nextMatchContent = "{} The {} will {} the {}.".format(nextMatchContent,
                                                         team1.name,
-                                                        vsPhrase,
+                                                        getRandomEntry(vs),
                                                         team2.name)
 
         speechOutput = "{}{}".format(liveMatchContent, nextMatchContent)
 
+        # Setup card
+        title = "Match Details"
+        img = Image(small_image_url=resource.OWL['LOGO'], large_image_url=resource.OWL['LOGO'])
+        content = speechOutput
+
         handler_input.response_builder.speak(speechOutput) \
-            .set_card(SimpleCard("", speechOutput)) \
+            .set_card(StandardCard(title, content, img)) \
             .set_should_end_session(True)
 
         return handler_input.response_builder.response
