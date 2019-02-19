@@ -40,7 +40,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
         speechOut = data.WELCOME_MESSAGE
 
-        ssmlSpeech = '<audio src=\"' + greeting + '"\/> ' + speechOut
+        ssmlSpeech = '<audio src=\"' + greeting + '\"/> ' + speechOut
 
         handler_input.response_builder.speak(ssmlSpeech).set_card(
             SimpleCard(data.SKILL_NAME, ssmlSpeech)).ask(data.WELCOME_REPROMPT)
@@ -57,10 +57,18 @@ class GetNextMatchIntent(AbstractRequestHandler):
         # type: (HandlerInput) -> Response
         logger.info("In GetNextMatchIntent")
 
+        # Get user timezone
+        usertz= getUserTimezone(handler_input.request_envelope)
+        if usertz is None:
+            handler_input = requestPermission(handler_input)
+            return handler_input.response_builder.response
+
+        # Get OWL schedule
         schedule = APIRequest.schedule()
 
         curWeek = getCurrentWeek(schedule)
         nextMatch = getNextMatch(curWeek)
+        matchTime = nextMatch.startdate.astimezone(usertz)
 
         team1 = nextMatch.teams[0]
         team2 = nextMatch.teams[1]
@@ -73,15 +81,15 @@ class GetNextMatchIntent(AbstractRequestHandler):
 
         # Prepare speech output
         nextMatchContent = "The next match will be"
-        if isToday(nextMatch.startTS):
+        if isToday(matchTime):
             nextMatchContent = "{} today at {}.".format(nextMatchContent,
-                                                    nextMatch.startTS.strftime(clkfrmt.clkstr))
-        elif isTomorrow(nextMatch.startTS):
+                                                    matchTime.strftime(clkfrmt.clkstr))
+        elif isTomorrow(matchTime):
             nextMatchContent = "{} tomorrow at {}.".format(nextMatchContent,
-                                                    nextMatch.startTS.strftime(clkfrmt.clkstr))
+                                                    matchTime.strftime(clkfrmt.clkstr))
         else:
             nextMatchContent = "{} on {}.".format(nextMatchContent,
-                                             nextMatch.startTS.strftime(clkfrmt.datetimestr))
+                                             matchTime.strftime(clkfrmt.datetimestr))
 
         nextMatchContent = "{} The {} will {} the {}.".format(nextMatchContent,
                                                         team1.name,

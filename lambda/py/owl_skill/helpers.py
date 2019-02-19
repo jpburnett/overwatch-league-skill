@@ -1,6 +1,11 @@
-
 from datetime import datetime as dt
 import random
+import requests
+import pytz
+
+from ask_sdk_model.ui.ask_for_permissions_consent_card import AskForPermissionsConsentCard
+
+from utils import data
 
 vs = [
     "face",
@@ -28,6 +33,47 @@ def getRandomEntry(inputList):
 class clkfrmt():
     datetimestr ='%A %B %d at %I:%M %p'
     clkstr = '%I:%M %p'
+
+def requestPermission(handler_input):
+    welcome = data.PERMISSIONS_WELCOME
+    prompt = data.PERMISSIONS_PROMPT
+
+    speechOutput = "{} {}".format(welcome, prompt)
+
+    requiredPermissions = ["read::alexa:device:all:address:country_and_postal_code"]
+    permissionsCard = AskForPermissionsConsentCard(requiredPermissions)
+
+    handler_input.response_builder.speak(speechOutput) \
+            .set_card(permissionsCard) \
+            .set_should_end_session(True)
+
+    return handler_input
+
+
+def getUserTimezone(request_envelope):
+    deviceId = request_envelope.context.system.device.device_id
+    endpoint = request_envelope.context.system.api_endpoint
+    token = request_envelope.context.system.api_access_token
+
+    headers = {'Authorization': 'Bearer {}'.format(token)}
+
+    url = '{}/v2/devices/{}/settings/System.timeZone'.format(endpoint, deviceId)
+
+    r = requests.get(url, headers=headers)
+
+    # TODO: right now the approach is to return None and then in the request if
+    # None is detected return a permission request. The TODO here is to consider
+    # if we may need to consider other options and if there is a better way.
+    if r.status_code >= 400:
+        print('User does not have permissions... redirecting...')
+        return None
+
+    # the content returned from the request are raw bytes the json() method
+    # decodes the response and strips the double quotation, and the timezones
+    # are guranteed to be from the tz database
+    # (https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+    return pytz.timezone(r.json())
+
  
 # TODO: wondering if this is the best way to make/store this comparison. There
 # probably is a more efficient way to go about doing this
