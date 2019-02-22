@@ -45,7 +45,7 @@ class APIRequest(URL):
 
     @classmethod
     def easteregg(cls):
-        cls.path = cls.baseurl;
+        cls.path = cls.baseurl
         cls.deser_cls_type = EasterEgg
         return cls.__makecall()
 

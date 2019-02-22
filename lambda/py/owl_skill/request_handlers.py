@@ -43,7 +43,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
         ssmlSpeech = '<audio src=\"' + greeting + '\"/> ' + speechOut
 
         handler_input.response_builder.speak(ssmlSpeech).set_card(
-            SimpleCard(data.SKILL_NAME, ssmlSpeech)).ask(data.WELCOME_REPROMPT)
+            SimpleCard(data.SKILL_NAME, "Overwatch League")).ask(data.WELCOME_REPROMPT)
         return handler_input.response_builder.response
 
 
