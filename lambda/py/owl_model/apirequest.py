@@ -8,6 +8,7 @@ from owl_model.league import League
 from owl_model.schedule import Schedule
 from owl_model.match import Match
 from owl_model.rankings import Rankings
+from owl_model.standings import Standings
 
 # TODO: make note in different request class about the difference between making
 # requests at teams and teamsById and schedule and matchById. For example, when

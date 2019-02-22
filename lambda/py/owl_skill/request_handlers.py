@@ -6,6 +6,7 @@ from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model.ui import StandardCard, SimpleCard
 from ask_sdk_model.ui.image import Image
 from ask_sdk_model.response import Response
+from ask_sdk_model.slu.entityresolution import StatusCode
 
 # Data contains all the skill speech phrases
 from utils import data
@@ -122,6 +123,24 @@ class GetNextTeamMatchIntent(AbstractRequestHandler):
         # will help with figuring out errors in cloudwatch later
         logger.info("In GetNextTeamMatchIntent")
 
+        slots = handler_input.request_envelope.request.intent.slots
+        id = ''
+        if 'Team' in slots:
+            teamSlot = slots['Team']
+            resolution = teamSlot.resolutions.resolutions_per_authority[0]
+            if resolution.status.code == StatusCode.ER_SUCCESS_MATCH:
+                resolutionValues = resolution.values[0]
+                team = resolutionValues.value.name
+                id = resolutionValues.value.id 
+            else:
+                print("ERRRORRRR")
+                #TODO: Figure out error handling 
+        else:
+            print("ANOTHER ERROR.....No team slots")
+            #TODO: continue implementing
+            
+        print(id)
+        team = APIRequest.teamfromid(id)
         speech_text = "Hello Python World from Classes!"
 
         handler_input.response_builder.speak(speech_text).set_card(
