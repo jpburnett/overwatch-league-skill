@@ -123,6 +123,14 @@ class GetNextTeamMatchIntent(AbstractRequestHandler):
         # will help with figuring out errors in cloudwatch later
         logger.info("In GetNextTeamMatchIntent")
 
+
+        # Get user timezone
+        usertz= getUserTimezone(handler_input.request_envelope)
+        if usertz is None:
+            handler_input = requestPermission(handler_input)
+            return handler_input.response_builder.response
+
+
         slots = handler_input.request_envelope.request.intent.slots
         id = ''
         if 'Team' in slots:
@@ -140,12 +148,30 @@ class GetNextTeamMatchIntent(AbstractRequestHandler):
             #TODO: continue implementing
             
         print(id)
-        team = APIRequest.teamfromid(id)
-        speech_text = "Hello Python World from Classes!"
+        team = APIRequest.teamfromid(id) #Get the teams endpoint
+        schedule = team.schedule #Schedule is a list of matches
+        
+        firstMatch = schedule[0]
+        
+        firstMatchState = firstMatch.state #get the match state
+        print(firstMatchState)
+        
+        liveMatchContent = ""
+        
+        nextMatchContent = "The next match will be"
+        
+        # Now that I got this working...
+        #TODO: Finish writing the logic for if a state is not concluded, that is
+        #when the next game should be...this could be bad logic, but hey, it works
+        for match in schedule:
+            print(match.state)
+            
+        
+        speechOutput = "Testing"
+        # speechOutput = "{}{}".format(liveMatchContent, nextMatchContent)
 
-        handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Hello World", speech_text)).set_should_end_session(
-            True)
+        handler_input.response_builder.speak(speechOutput).set_card(
+            SimpleCard("Hello World", speechOutput)).set_should_end_session(True)
         return handler_input.response_builder.response
 
 
