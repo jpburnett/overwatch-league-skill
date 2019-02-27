@@ -122,15 +122,13 @@ class GetNextTeamMatchIntent(AbstractRequestHandler):
 
         # will help with figuring out errors in cloudwatch later
         logger.info("In GetNextTeamMatchIntent")
-
-
+        
         # Get user timezone
         usertz= getUserTimezone(handler_input.request_envelope)
         if usertz is None:
             handler_input = requestPermission(handler_input)
             return handler_input.response_builder.response
-
-
+        
         slots = handler_input.request_envelope.request.intent.slots
         id = ''
         if 'Team' in slots:
@@ -138,7 +136,7 @@ class GetNextTeamMatchIntent(AbstractRequestHandler):
             resolution = teamSlot.resolutions.resolutions_per_authority[0]
             if resolution.status.code == StatusCode.ER_SUCCESS_MATCH:
                 resolutionValues = resolution.values[0]
-                team = resolutionValues.value.name
+                teamName = resolutionValues.value.name
                 id = resolutionValues.value.id 
             else:
                 print("ERRRORRRR")
@@ -158,16 +156,28 @@ class GetNextTeamMatchIntent(AbstractRequestHandler):
         
         liveMatchContent = ""
         
-        nextMatchContent = "The next match will be"
+        nextMatchContent = "The next {} match will be".format(teamName)
         
         # Now that I got this working...
         #TODO: Finish writing the logic for if a state is not concluded, that is
         #when the next game should be...this could be bad logic, but hey, it works
         for match in schedule:
+            if match.state == "PENDING":
+                
+                #WHY DOES THIS BREAK THINGS?!?! ITS LITERALLY THE SAME AS LINE 175 and THAT WORKS
+                startTime = match.actualStartDate
+                print("In Pending for loop")
+                matchTime = "one upcoming"
+                break
+            else:
+                matchTime = "No new matches"
+                
             print(match.state)
+            actualTime = match.actualStartDate
+            print(actualTime)
             
         
-        speechOutput = "Testing"
+        speechOutput = "{} at {}".format(nextMatchContent, matchTime)
         # speechOutput = "{}{}".format(liveMatchContent, nextMatchContent)
 
         handler_input.response_builder.speak(speechOutput).set_card(
