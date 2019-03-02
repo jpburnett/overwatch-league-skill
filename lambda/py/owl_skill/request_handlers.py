@@ -6,6 +6,7 @@ from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model.ui import StandardCard, SimpleCard
 from ask_sdk_model.ui.image import Image
 from ask_sdk_model.response import Response
+from ask_sdk_model.slu.entityresolution import StatusCode
 
 # Data contains all the skill speech phrases
 from utils import data
@@ -43,7 +44,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
         ssmlSpeech = '<audio src=\"' + greeting + '\"/> ' + speechOut
 
         handler_input.response_builder.speak(ssmlSpeech).set_card(
-            SimpleCard(data.SKILL_NAME, ssmlSpeech)).ask(data.WELCOME_REPROMPT)
+            SimpleCard(data.SKILL_NAME, "Overwatch League")).ask(data.WELCOME_REPROMPT)
         return handler_input.response_builder.response
 
 
@@ -121,12 +122,66 @@ class GetNextTeamMatchIntent(AbstractRequestHandler):
 
         # will help with figuring out errors in cloudwatch later
         logger.info("In GetNextTeamMatchIntent")
+        
+        # Get user timezone
+        usertz= getUserTimezone(handler_input.request_envelope)
+        if usertz is None:
+            handler_input = requestPermission(handler_input)
+            return handler_input.response_builder.response
+        
+        slots = handler_input.request_envelope.request.intent.slots
+        id = ''
+        if 'Team' in slots:
+            teamSlot = slots['Team']
+            resolution = teamSlot.resolutions.resolutions_per_authority[0]
+            if resolution.status.code == StatusCode.ER_SUCCESS_MATCH:
+                resolutionValues = resolution.values[0]
+                teamName = resolutionValues.value.name
+                id = resolutionValues.value.id 
+            else:
+                print("ERRRORRRR")
+                #TODO: Figure out error handling 
+        else:
+            print("ANOTHER ERROR.....No team slots")
+            #TODO: continue implementing
+            
+        print(id)
+        team = APIRequest.teamfromid(id) #Get the teams endpoint
+        schedule = team.schedule #Schedule is a list of matches
+        
+        firstMatch = schedule[0]
+        
+        firstMatchState = firstMatch.state #get the match state
+        print(firstMatchState)
+        
+        liveMatchContent = ""
+        
+        nextMatchContent = "The next {} match will be".format(teamName)
+        
+        # Now that I got this working...
+        #TODO: Finish writing the logic for if a state is not concluded, that is
+        #when the next game should be...this could be bad logic, but hey, it works
+        for match in schedule:
+            if match.state == "PENDING":
+                
+                #WHY DOES THIS BREAK THINGS?!?! ITS LITERALLY THE SAME AS LINE 175 and THAT WORKS
+                startTime = match.actualStartDate
+                print("In Pending for loop")
+                matchTime = "one upcoming"
+                break
+            else:
+                matchTime = "No new matches"
+                
+            print(match.state)
+            actualTime = match.actualStartDate
+            print(actualTime)
+            
+        
+        speechOutput = "{} at {}".format(nextMatchContent, matchTime)
+        # speechOutput = "{}{}".format(liveMatchContent, nextMatchContent)
 
-        speech_text = "Hello Python World from Classes!"
-
-        handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Hello World", speech_text)).set_should_end_session(
-            True)
+        handler_input.response_builder.speak(speechOutput).set_card(
+            SimpleCard("Hello World", speechOutput)).set_should_end_session(True)
         return handler_input.response_builder.response
 
 

@@ -2,6 +2,8 @@ from datetime import datetime as dt
 import random
 import requests
 import pytz
+import logging
+import six
 
 from ask_sdk_model.ui.ask_for_permissions_consent_card import AskForPermissionsConsentCard
 
@@ -134,7 +136,7 @@ def getNextMatch(week):
 
     # a valid match was not found
     return None
-
+    
 if __name__=="__main__":
     from owl_model.apirequest import APIRequest
 

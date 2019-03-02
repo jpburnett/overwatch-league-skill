@@ -17,12 +17,6 @@ class Rankings(ModelObject):
         'placement': 'placement',
         'advantage': 'advantage'
     } 
-    
-    @classmethod
-    def bootstrap_subclass(cls, data):
-        """
-        """
-        return data['data']
 
     def __init__ (self, id=None, name=None, placement=None, advantage=None,
                     records=None):
