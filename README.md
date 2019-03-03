@@ -69,20 +69,26 @@ the ```sample_events``` dictionary of ```aws_sim.py```.
 
 1. Setup your enviornment
 
-    source <path/to/env>/bin/activate>
-    export PYTHONPATH=<path/to/repo>/lambda/py
+```
+source <path/to/env>/bin/activate>
+export PYTHONPATH=<path/to/repo>/lambda/py
+```
 
 2. Start IPython from ```lambda/py```
 
-    cd <path/to/repo>/lambda/py
-    ipython
+```
+cd <path/to/repo>/lambda/py
+ipython
+```
 
 3. The following will run the simulator for the default launch request:
 
-    %run aws_sim.py lambda
-    request_envelope = load_request_from_templates(samples_path+sample_events['LaunchRequest'])
-    context = load_context()
-    s.invoke(request_envelope, context)
+```
+%run aws_sim.py lambda
+request_envelope = load_request_from_templates(samples_path+sample_events['LaunchRequest'])
+context = load_context()
+s.invoke(request_envelope, context)
+```
 
 The output should be similar to the following:
 
