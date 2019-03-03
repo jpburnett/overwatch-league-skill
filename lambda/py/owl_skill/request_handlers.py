@@ -50,70 +50,65 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
 
 class GetNextMatchIntent(AbstractRequestHandler):
-    """Handler for getting the next team match."""
-
+    """Handler for getting the next match."""
     def can_handle(self, handler_input):
         # type: (HandlerInput) -> bool
-        return is_intent_name("GetNextTeamMatchIntent")(handler_input)
+        return is_intent_name("GetNextMatchIntent")(handler_input)
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
-
-        # will help with figuring out errors in cloudwatch later
-        logger.info("In GetNextTeamMatchIntent")
+        logger.info("In GetNextMatchIntent")
 
         # Get user timezone
-        usertz = getUserTimezone(handler_input.request_envelope)
+        usertz= getUserTimezone(handler_input.request_envelope)
         if usertz is None:
             handler_input = requestPermission(handler_input)
             return handler_input.response_builder.response
 
-        slots = handler_input.request_envelope.request.intent.slots
-        id = ''
-        if 'Team' in slots:
-            teamSlot = slots['Team']
-            resolution = teamSlot.resolutions.resolutions_per_authority[0]
-            if resolution.status.code == StatusCode.ER_SUCCESS_MATCH:
-                resolutionValues = resolution.values[0]
-                teamName = resolutionValues.value.name
-                id = resolutionValues.value.id
-            else:
-                print("ERRRORRRR")
-                # TODO: Figure out error handling
-        else:
-            print("ANOTHER ERROR.....No team slots")
-            # TODO: continue implementing
+        # Get OWL schedule
+        schedule = APIRequest.schedule()
 
-        print(id)
-        team = APIRequest.teamfromid(id)  # Get the teams endpoint
-        schedule = team.schedule  # Schedule is a list of matches
+        curWeek = getCurrentWeek(schedule)
+        nextMatch = getNextMatch(curWeek)
+        matchTime = nextMatch.startdate.astimezone(usertz)
 
-        firstMatch = schedule[0]
+        team1 = nextMatch.teams[0]
+        team2 = nextMatch.teams[1]
 
-        firstMatchState = firstMatch.state  # get the match state
-        print(firstMatchState)
-
+        # TODO: old version implemented a check for live games here. It is
+        # probably a good idea to check for a live game (the user may be
+        # interested to know) but the TODO is to consider if here is the best
+        # place to do that.
         liveMatchContent = ""
 
-        nextTeamMatchInto = "The next {} match will be".format(teamName)
+        # Prepare speech output
+        nextMatchContent = "The next match will be"
+        if isToday(matchTime):
+            nextMatchContent = "{} today at {}.".format(nextMatchContent,
+                                                    matchTime.strftime(clkfrmt.clkstr))
+        elif isTomorrow(matchTime):
+            nextMatchContent = "{} tomorrow at {}.".format(nextMatchContent,
+                                                    matchTime.strftime(clkfrmt.clkstr))
+        else:
+            nextMatchContent = "{} on {}.".format(nextMatchContent,
+                                             matchTime.strftime(clkfrmt.datetimestr))
 
-        # Now that I got this working...
-        # TODO: Finish writing the logic for if a state is not concluded, that is
-        # when the next game should be...this could be bad logic, but hey, it works
-        for match in schedule:
-            if match.state == "PENDING":
-                matchTime = match.startdate
-                print(matchTime)
-                nextTeamMatchContent = "{} on {}".format(
-                    nextTeamMatchIntro, matchTime.strftime(clkfrmt.datetimestr))
-                break
-            else:
-                noUpcomingMatch = "No new matches"
+        nextMatchContent = "{} The {} will {} the {}.".format(nextMatchContent,
+                                                        team1.name,
+                                                        getRandomEntry(vs),
+                                                        team2.name)
 
-        speechOutput = nextTeamMatchContent
+        speechOutput = "{}{}".format(liveMatchContent, nextMatchContent)
 
-        handler_input.response_builder.speak(speechOutput).set_card(
-            SimpleCard("Next Team Match", speechOutput)).set_should_end_session(True)
+        # Setup card
+        title = "Match Details"
+        img = Image(small_image_url=resource.OWL['LOGO'], large_image_url=resource.OWL['LOGO'])
+        content = speechOutput
+
+        handler_input.response_builder.speak(speechOutput) \
+            .set_card(StandardCard(title, content, img)) \
+            .set_should_end_session(True)
+
         return handler_input.response_builder.response
 
 
