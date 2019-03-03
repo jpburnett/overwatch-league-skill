@@ -57,6 +57,11 @@ class Team(ModelObject):
         /match/id request).
         This bootstraps the team component to match the owl_model expectation.
         """
+
+        # accomodate the v2 endpoint
+        if 'data' in data:
+            data = data['data']
+
         # handle when no players are present in team info
         if not 'players' in data:
             return data
