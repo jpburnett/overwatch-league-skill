@@ -94,11 +94,7 @@ class GetNextMatchIntent(AbstractRequestHandler):
             nextMatchContent = "{} on {}.".format(nextMatchContent,
                                                   matchTime.strftime(clkfrmt.datetimestr))
 
-        nextMatchContent = "{} The {} will {} the {}.".format(nextMatchContent,
-                                                              team1.name,
-                                                              getRandomEntry(
-                                                                  vs),
-                                                              team2.name)
+        nextMatchContent = "{} The {} will {} the {}.".format(nextMatchContent,team1.name,getRandomEntry(vs),team2.name)
 
         speechOutput = "{}{}".format(liveMatchContent, nextMatchContent)
 
@@ -161,7 +157,7 @@ class GetNextTeamMatchIntent(AbstractRequestHandler):
 
         liveMatchContent = ""
 
-        nextTeamMatchInto = "The next {} match will be".format(teamName)
+        nextTeamMatchIntro = "The next {} match will be".format(teamName)
 
         # Now that I got this working...
         # TODO: Finish writing the logic for if a state is not concluded, that is
@@ -300,7 +296,13 @@ class GetTopTeamHandler(AbstractRequestHandler):
         # will help with figuring out errors in cloudwatch later
         logger.info("In GetTopTeamHandler")
 
-        speech_text = "Hello Python World from Classes!"
+        rankings = APIRequest.rankings()
+        teamRankings = rankings.ranks
+        smittyWerbenManJensen = teamRankings[0].team.name #He was number one
+        print(smittyWerbenManJensen)
+
+        speech_text = smittyWerbenManJensen
+
 
         handler_input.response_builder.speak(speech_text).set_card(
             SimpleCard("Hello World", speech_text)).set_should_end_session(
