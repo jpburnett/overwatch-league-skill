@@ -24,6 +24,7 @@ sample_events = {
     'HelpIntent': '/helpIntent.json',
     'GetNextMatchIntent': '/getNextMatchEvent.json',
     'GetNextTeamMatchIntent': '',
+    'GetTeamRecordIntent': '/getTeamRecordEvent.json',
     'GetTodaysMatchesIntent': '/getTodaysMatchesEvent.json',
     'GetTomorrowsMatchesIntent': '/getTomorrowsMatchesEvent.json',
     'GetStandingsIntent': '/getStandingsEvent.json',

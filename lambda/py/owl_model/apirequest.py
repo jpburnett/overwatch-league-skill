@@ -25,7 +25,9 @@ class APIRequest(URL):
     baseurl = 'https://api.overwatchleague.com'
     endpoints = {
         'TeamsRequest': '/teams',
+        #'TeamsV2Request': '/v2/teams', putting this here for reference
         'TeamByIdRequest': '/team/{}',
+        'TeamByIdV2Request': '/v2/team/{}',
         'ScheduleRequest': '/schedule',
         'MatchByIdRequest': '/match/{}',
         'RankingsRequest': '/ranking'
@@ -65,6 +67,17 @@ class APIRequest(URL):
             return None
 
         cls.path = cls.baseurl + cls.endpoints['TeamByIdRequest']
+        cls.path = cls.path.format(teamid)
+        cls.deser_cls_type = Team
+        return cls.__makecall()
+
+    @classmethod
+    def teamfromid_v2(cls, teamid=None):
+        if not teamid:
+            print("ERROR: team id not provided")
+            return None
+
+        cls.path = cls.baseurl + cls.endpoints['TeamByIdV2Request']
         cls.path = cls.path.format(teamid)
         cls.deser_cls_type = Team
         return cls.__makecall()

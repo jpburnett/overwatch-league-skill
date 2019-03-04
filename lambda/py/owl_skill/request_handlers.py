@@ -208,14 +208,83 @@ class GetStandingsIntent(AbstractRequestHandler):
 
     def handle(self, handler_input):
         # type: (HandlerInput) -> Response
-
-        # will help with figuring out errors in cloudwatch later
         logger.info("In GetStandingsIntent")
-        speech_text = "Hello Python World from Classes!"
 
-        handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Hello World", speech_text)).set_should_end_session(
-            True)
+         # determine the number of teams to report on
+        slots = handler_input.request_envelope.request.intent.slots
+        if 'AMAZON.NUMBER' in slots:
+            numTeams = int(slots['AMAZON.NUMBER'].value)
+
+        elif 'Standings' in slots:
+            numTeams = int(slots['Standings'].value)
+        else:
+            # default to the top three teams
+            numTeams = 3
+
+        speechOutput = ''
+        rankings = APIRequest.rankings()
+
+        if rankings.ranks is None:
+            print("Error, response was empty")
+            # TODO: return an alexa response with an error and close session
+
+        if numTeams == 0:
+            speechOutput = (' I am sorry, but asking for the top zero teams is'
+                    ' a little silly, don\'t you think? Is there something else'
+                    ' you would like to know?')
+            # TODO: Need to implement the SIMPLE_REPROMPT
+            handler_input.response_builder.speak(speechOutput).ask(data.SIMPLE_REPROMPT)
+            # TODO: does set_should_end_session need to be called and set to False?
+            return handler_input.response_builder.response
+        if numTeams < 0:
+            speechOutput = ('Even I know that makes no sense. You need to ask'
+                    ' for a positive number. Is there something else you would'
+                    ' like to know?')
+            handler_input.response_builder.speak(speechOutput).ask(data.SIMPLE_REPROMPT)
+            # TODO: does set_should_end_session need to be called and set to False?
+            return handler_input.response_builder.response
+        if numTeams > len(rankings.ranks):
+            speechOutput = ('I am sorry, there are only {} teams in the league'
+                    ' right now. I will tell you the standings for all of'
+                    ' them.')
+            speechOutput = speechOutput.format(len(rankings.ranks))
+            numTeams = len(rankings.ranks)
+
+        if numTeams == len(rankings.ranks):
+            speechOutput = speechOutput + ('From first place to last place, the'
+                    ' current league standings: ')
+        elif numTeams == 1:
+            speechOutput = 'The top team in the league right now is: '
+        else:
+            speechOutput = 'The top {} teams in the league right now are: '
+            speechOutput = speechOutput.format(numTeams)
+
+        # Setup card
+        cardTitle = "Standings"
+        cardImg = Image()
+        cardContent = speechOutput
+
+        # Fill out speech output with standings info
+        for i in range(0, numTeams):
+            team = rankings.ranks[i].team
+            record = rankings.ranks[i].record
+            name = team.name
+
+            if (i != numTeams - 1 or numTeams == 1):
+                speechOutput = speechOutput + ' the {},'.format(name)
+            else:
+                speechOutput = speechOutput + ' and the {}.'.format(name)
+
+            cardContent = '{}\n{}\t{}-{}'.format(cardContent, name,
+                                            record.matchwin, record.matchloss)
+            if i == 0:
+                cardImg.small_image_url=team.logo
+                cardImg.large_image_url=team.logo
+
+        handler_input.response_builder.speak(speechOutput) \
+            .set_card(StandardCard(cardTitle, cardContent, cardImg)) \
+            .set_should_end_session(True)
+
         return handler_input.response_builder.response
 
 
@@ -232,11 +301,49 @@ class GetTeamRecordIntent(AbstractRequestHandler):
         # will help with figuring out errors in cloudwatch later
         logger.info("In GetTeamRecordIntent")
 
-        speech_text = "Hello Python World from Classes!"
+        slots = handler_input.request_envelope.request.intent.slots
+        if 'Team' not in slots:
+            print("Error: entered request without a slot")
+            # TODO: Will we ever get here? If so we need to return an ASK error
 
-        handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Hello World", speech_text)).set_should_end_session(
-            True)
+        teamSlot = slots['Team']
+        resolution = teamSlot.resolutions.resolutions_per_authority[0]
+
+        if resolution.status.code == StatusCode.ER_SUCCESS_MATCH:
+            resolutionValues = resolution.values[0]
+            teamName = resolutionValues.value.name
+            teamId = resolutionValues.value.id
+        else:
+            print("Error: not a valid team recognized in the slots")
+            # TODO: implement data.TEAM_REPROMPT
+            handler_input.response_builder.speak(data.INVALID_TEAM_MSG.format(teamSlot.value))\
+                    .ask(data.TEAM_REPORMPT)
+            return handler_input.response_builder.response
+
+        team = APIRequest.teamfromid_v2(teamId)
+        record = team.records
+
+        W = record['matchWin']
+        L = record['matchLoss']
+
+        speechOutput = 'The {} have a record of {} wins and {}'.format(team.name,
+                                                                W, L)
+        if L == 1:
+            speechOutput = speechOutput + ' loss.'
+        else:
+            speechOutput = speechOutput + ' losses.'
+
+        cardTitle = '{}: {}-{}'.format(team.name, W, L)
+        cardContent = ''
+        # TODO: With the /v2/teams endpoint the logo URL are a little more
+        # formatted and varying. Need to go back and modify.
+        cardImg = Image(small_image_url=team.logo.path['main']['svg'],
+                    large_image_url=team.logo.path['main']['svg'])
+
+        handler_input.response_builder.speak(speechOutput) \
+            .set_card(StandardCard(cardTitle, cardContent, cardImg)) \
+            .set_should_end_session(True)
+
         return handler_input.response_builder.response
 
 
