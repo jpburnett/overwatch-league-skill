@@ -5,7 +5,9 @@ dump/
 
 
 skill_env/
-lambda/py/resources.py
+pyenv/
+lambda/py/utils/resources.py
+__pycache__/
 
 main.js
 *.json

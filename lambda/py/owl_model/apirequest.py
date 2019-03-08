@@ -7,6 +7,8 @@ from owl_model.team import Team
 from owl_model.league import League
 from owl_model.schedule import Schedule
 from owl_model.match import Match
+from owl_model.rankings import Rankings
+from owl_model.standings import Standings
 
 # TODO: make note in different request class about the difference between making
 # requests at teams and teamsById and schedule and matchById. For example, when
@@ -23,7 +25,9 @@ class APIRequest(URL):
     baseurl = 'https://api.overwatchleague.com'
     endpoints = {
         'TeamsRequest': '/teams',
+        #'TeamsV2Request': '/v2/teams', putting this here for reference
         'TeamByIdRequest': '/team/{}',
+        'TeamByIdV2Request': '/v2/team/{}',
         'ScheduleRequest': '/schedule',
         'MatchByIdRequest': '/match/{}',
         'RankingsRequest': '/ranking'
@@ -44,7 +48,7 @@ class APIRequest(URL):
 
     @classmethod
     def easteregg(cls):
-        cls.path = cls.baseurl;
+        cls.path = cls.baseurl
         cls.deser_cls_type = EasterEgg
         return cls.__makecall()
 
@@ -68,6 +72,17 @@ class APIRequest(URL):
         return cls.__makecall()
 
     @classmethod
+    def teamfromid_v2(cls, teamid=None):
+        if not teamid:
+            print("ERROR: team id not provided")
+            return None
+
+        cls.path = cls.baseurl + cls.endpoints['TeamByIdV2Request']
+        cls.path = cls.path.format(teamid)
+        cls.deser_cls_type = Team
+        return cls.__makecall()
+
+    @classmethod
     def schedule(cls):
         cls.path=cls.baseurl + cls.endpoints['ScheduleRequest']
         cls.deser_cls_type = Schedule
@@ -82,6 +97,13 @@ class APIRequest(URL):
         cls.path = cls.baseurl + cls.endpoints['MatchByIdRequest']
         cls.path = cls.path.format(matchid)
         cls.deser_cls_type = Match
+        return cls.__makecall()
+
+    # Class method to get the rankings call. 
+    @classmethod
+    def rankings(cls):
+        cls.path = cls.baseurl + cls.endpoints['RankingsRequest']
+        cls.deser_cls_type = Rankings
         return cls.__makecall()
 
 

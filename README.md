@@ -61,3 +61,86 @@ We hope to add more features as time goes on.
 3. Zip the contents of the skill_env folder. Zip the contents of the folder and NOT the folder itself. If you zip the folder it will not work
 
 4. Upload the .ZIP file to the AWS Lambda console
+
+## Using IPython to Test Locally
+To use the local Alexa simulator you will need some sample events in JSON format
+under ```lambda/py/utils/sampleEvents```. The files need to be named as shown in
+the ```sample_events``` dictionary of ```aws_sim.py```.
+
+1. Setup your enviornment
+
+```
+source <path/to/env>/bin/activate>
+export PYTHONPATH=<path/to/repo>/lambda/py
+```
+
+2. Start IPython from ```lambda/py```
+
+```
+cd <path/to/repo>/lambda/py
+ipython
+```
+
+3. The following will run the simulator for the default launch request:
+
+```
+%run aws_sim.py lambda
+request_envelope = load_request_from_templates(samples_path+sample_events['LaunchRequest'])
+context = load_context()
+s.invoke(request_envelope, context)
+```
+
+The output should be similar to the following:
+
+    {'response': {'can_fulfill_intent': None,
+              'card': {'content': 'Overwatch League',
+                       'object_type': 'Simple',
+                       'title': 'Overwatch League'},
+              'directives': None,
+              'output_speech': {'object_type': 'SSML',
+                                'play_behavior': None,
+                                'ssml': '<speak>'
+                                        'Welcome to Overwatch League. You can '
+                                        'ask me about Overwatch League games '
+                                        'and standings. For more help on '
+                                        'everything I can do, say '
+                                        'help.</speak>'},
+              'reprompt': {'output_speech': {'object_type': 'SSML',
+                                             'play_behavior': None,
+                                             'ssml': '<speak>For instructions '
+                                                     'on what I can help with, '
+                                                     'say help.</speak>'}},
+              'should_end_session': False},
+    'session_attributes': {},
+    'user_agent': 'ask-python/1.8.0 Python/3.7.0',
+    'version': '1.0'}
+
+To invoke a different intent replace ```'LaunchRequest'``` with a different one
+from the ```sample_events``` dictionary in the simulator.
+
+## A list of endpoints
+
+```
+/rankings - returns current rankings
+/schedule - returns current schedule including past matches 
+/matches - Returns all matches
+/matches/:matchID
+/match - Returns all matches
+/match/:matchID - Returns a specific match
+/teams - Returns all teams
+/teams/:TeamID - Returns a specific team
+/news - Returns all news items
+/news/:blogID - Returns a specified news item
+/data/countries - Returns list of countries
+/v2/email - Unsure what this does, but it was in the js
+/live-match - Presumably returns live data for a match?
+/v2/streams - Returns owl stream links
+/maps - Returns list of maps
+/vods - Returns list of vods for prior matches
+/live-match
+/players
+/standings
+/playoffs
+/about
+/health
+```
