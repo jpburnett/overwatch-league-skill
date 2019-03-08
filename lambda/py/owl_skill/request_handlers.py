@@ -405,15 +405,28 @@ class GetTopTeamHandler(AbstractRequestHandler):
 
         rankings = APIRequest.rankings()
         teamRankings = rankings.ranks
-        smittyWerbenManJensen = teamRankings[0].team.name #He was number one
-        print(smittyWerbenManJensen)
+        smittyWerbenManJensen = teamRankings[0] #He was number one
+        #Get the team name
+        teamName = smittyWerbenManJensen.team.name
+        #Get the number of matches won
+        W = smittyWerbenManJensen.record.matchwin
+        L = smittyWerbenManJensen.record.matchloss
 
-        speech_text = smittyWerbenManJensen
+        teamLogoSmol = smittyWerbenManJensen.team.logo
+        teamLogoLarge = smittyWerbenManJensen.team.logolrg
 
+        speechOutput = "The top team in the Overwatch League is {}".format(teamName)
 
-        handler_input.response_builder.speak(speech_text).set_card(
-            SimpleCard("Hello World", speech_text)).set_should_end_session(
-            True)
+        cardTitle = '{}: {}W - {}L'.format(teamName, W, L)
+        cardContent = ''
+        # TODO: With the /v2/teams endpoint the logo URL are a little more
+        # formatted and varying. Need to go back and modify.
+        cardImg = Image(small_image_url=teamLogoSmol.path,
+                    large_image_url=teamLogoLarge.path)
+
+        handler_input.response_builder.speak(speechOutput) \
+            .set_card(StandardCard(cardTitle, cardContent, cardImg)) \
+            .set_should_end_session(True)
         return handler_input.response_builder.response
 
 
