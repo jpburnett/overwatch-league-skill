@@ -3,6 +3,12 @@
 node_modules/
 dump/
 
+
+skill_env/
+pyenv/
+lambda/py/utils/resources.py
+__pycache__/
+
 main.js
 *.json
 .DS_Store
