@@ -1,15 +1,17 @@
-
 import sys, inspect
 
+# Amazon/Alexa Imports
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import (
     AbstractRequestHandler, AbstractExceptionHandler,
     AbstractRequestInterceptor, AbstractResponseInterceptor)
 
+# Other imports
 import owl_skill.request_handlers
 import owl_skill.exception_handlers
 import owl_skill.interceptors
 
+# Skill Builder Object
 sb = SkillBuilder()
 
 # Register intent request handlers
