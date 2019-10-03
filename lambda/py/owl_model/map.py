@@ -27,10 +27,12 @@ class Map(ModelObject):
         'route-66': 'escort',
         'gibraltar': 'escort',
         'rialto': 'escort',
+        'havana': 'escort',
         'hanamura': 'assault',
         'volskaya': 'assault',
         'temple-of-anubis': 'assault',
         'horizon-lunar-colony': 'assault',
+        'paris': 'assault',
         'kings-row': 'hybrid',
         'numbani': 'hybrid',
         'hollywood': 'hybrid',
@@ -38,9 +40,9 @@ class Map(ModelObject):
         'blizzard-world': 'hybrid',
         'nepal': 'control',
         'ilios': 'control',
-        'lijiang': 'control',
+        'lijiang-tower': 'control',
         'oasis': 'control',
-        'busan': 'control'
+        'busan': 'control',
     }
 
     def __init__ (self, id=None, name=None, type=None):
