@@ -2,7 +2,7 @@
 [![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/)
 
 # overwatch-league-skill
-
+<p align="center" font="64pt" font-weight> SEASON 3 </p>
 <p align="center">
   <b>The Overwatch League Alexa Skill</b><br>
   <a href="https://www.overwatchleague.com">Overwatch League Website</a> |
@@ -11,9 +11,9 @@
   <br><br>
   <img src="https://bnetcmsus-a.akamaihd.net/cms/blog_thumbnail/sk/SK64HITB0XB41544562348016.jpg">
   
-  <p align="center" font="32pt"> WELCOME TO SEASON 2! </p>
-  
 </p>
+
+[Link to 2020 Schedule](https://bnetcmsus-a.akamaihd.net/cms/content_entry_media/sj/SJ76PUAZCKL71566272656822.pdf) 
 
 ## What Does the Skill Do?
 The Overwatch League Skill gives information about the overwatch league game schedule and scores. 
