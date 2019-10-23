@@ -1,5 +1,8 @@
-# overwatch-league-skill
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://raw.githubusercontent.com/jpburnett/overwatch-league-skill/master/LICENSE)
+[![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://www.python.org/downloads/release/python-360/)
+
+# overwatch-league-skill
+
 <p align="center">
   <b>The Overwatch League Alexa Skill</b><br>
   <a href="https://www.overwatchleague.com">Overwatch League Website</a> |
