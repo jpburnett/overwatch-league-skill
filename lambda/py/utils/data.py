@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 # Resolving gettext as _ for module loading. This will help with future il18n (internationalization?...)
+
+"""
+filename: data.py
+Contains most of the text for Alexa intro and help dialog 
+"""
+
 from gettext import gettext as _
 
 SKILL_NAME = _("Overwatch League")
